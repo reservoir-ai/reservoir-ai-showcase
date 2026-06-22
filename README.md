@@ -1,12 +1,30 @@
 # Reservoir AI
 
-### AI-Powered Reservoir Engineering Intelligence Platform
+## AI-Powered Reservoir Engineering Intelligence Platform
 
 Reservoir AI is an engineering software platform being developed to augment reservoir engineering workflows through automation, diagnostics, forecasting, uncertainty-aware analytics, and AI-assisted decision support.
 
 The platform combines reservoir simulation, engineering domain models, machine learning, and modern software architecture to help engineers move faster from data to actionable recommendations.
 
----
+![Status](https://img.shields.io/badge/status-active%20development-green)
+![Python](https://img.shields.io/badge/python-3.x-blue)
+![Reservoir Engineering](https://img.shields.io/badge/domain-reservoir%20engineering-orange)
+
+## Author
+
+**Jose L. Guevara, PhD**
+
+Petroleum Engineer and Postdoctoral Researcher at the University of Alberta.
+
+Research interests include:
+
+- Reservoir Simulation
+- SAGD Optimization
+- Production Forecasting
+- Reinforcement Learning
+- Uncertainty Analysis
+- Engineering Software Development
+- Artificial Intelligence for Energy Applications
 
 ## Vision
 
@@ -20,8 +38,6 @@ Reservoir engineers spend significant time:
 - Generating technical reports
 
 Reservoir AI aims to automate repetitive engineering workflows while maintaining transparency, traceability, and engineering rigor.
-
----
 
 ## Current Development
 
@@ -64,44 +80,19 @@ Assessment of:
 - Producer-injector relationships
 - Operational performance indicators
 
----
+## Implemented Components
 
-## Current Architecture
+Current development includes:
 
-```text
-Parser Layer
-      ↓
-Domain Models
-      ↓
-Analysis Services
-      ↓
-Validation Services
-      ↓
-Serializers
-      ↓
-API Layer
-      ↓
-User Interface
-```
-
-### Core Domain Objects
-
-- ReservoirModel
-- Well
-- Completion
-- WellControl
-- SAGDPair
-- WellTimelineEvent
-
-### Analysis Components
-
-- Validation Engine
-- Well Inventory Service
-- Timeline Builder
-- Operating Strategy Analysis
-- Reservoir Diagnostics
-
----
+- ReservoirModel domain object
+- Well domain object
+- Completion tracking
+- WellControl tracking
+- SAGD Pair relationships
+- Timeline reconstruction engine
+- Reservoir validation framework
+- Well inventory generation
+- Operating strategy analysis
 
 ## Technology Stack
 
@@ -113,44 +104,28 @@ User Interface
 - Machine Learning
 - Artificial Intelligence
 
----
+## Repository Contents
 
-## Future Capabilities
+- README.md
+- ARCHITECTURE.md
+- ROADMAP.md
+- VISION.md
 
-### Reservoir Engineering Copilot
+## Current Status
 
-Examples:
+Active Development
 
-> Which SAGD pair experienced the largest steam efficiency decline?
+Current priorities include:
 
-> Identify wells with inconsistent controls.
+- Reservoir Model Validation
+- Well Inventory Analysis
+- Timeline Reconstruction
+- Operating Strategy Analysis
+- Reservoir Diagnostics
+- AI-Assisted Engineering Workflows
 
-> Summarize major operating changes between 2020 and 2025.
+For additional details see:
 
-### Forecasting & Optimization
-
-- Production forecasting
-- Uncertainty analysis
-- Scenario comparison
-- Optimization workflows
-
-### Knowledge Intelligence
-
-- Engineering document retrieval
-- Reservoir study summarization
-- Automated reporting
-
----
-
-## About
-
-Reservoir AI is an independent software initiative led by Jose L. Guevara, PhD Petroleum Engineering (University of Alberta).
-
-Research interests include:
-
-- Reservoir Simulation
-- SAGD Optimization
-- Reinforcement Learning
-- Production Forecasting
-- Applied Artificial Intelligence
-- Engineering Software Development
+- ARCHITECTURE.md
+- ROADMAP.md
+- VISION.md
