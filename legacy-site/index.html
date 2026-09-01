@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reservoir AI</title>
+
+  <meta
+    name="description"
+    content="Reservoir AI transforms reservoir simulation models into structured engineering information, diagnostics, validation findings, and analysis."
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <main>
+
+    <!-- INTRODUCTION -->
+    <section class="hero section">
+      <div class="container hero-content">
+
+        <p class="eyebrow">
+          Reservoir Engineering Intelligence Platform
+        </p>
+
+        <h1>Reservoir AI</h1>
+
+        <h2>
+          AI-assisted engineering intelligence for reservoir simulation models
+        </h2>
+
+        <p class="hero-description">
+          Reservoir AI transforms reservoir simulation decks into
+          structured engineering information.
+        </p>
+
+        <p class="hero-description secondary">
+          The platform parses model inputs, reconstructs reservoir and grid
+          information, validates model consistency, generates engineering
+          diagnostics, and produces higher-level analysis to help engineers
+          review complex simulation models more efficiently.
+        </p>
+
+      </div>
+    </section>
+
+
+    <!-- GENERAL PRODUCT VIEW -->
+    <section class="section section-first-image">
+      <div class="container">
+
+        <figure class="feature-image">
+          <img
+            src="assets/screenshots/general-product-view.svg"
+            alt="Reservoir AI application dashboard"
+          />
+
+          <figcaption>
+            A reservoir simulation model organized into engineering Summary,
+            Diagnostics, Validation, and Analysis.
+          </figcaption>
+        </figure>
+
+      </div>
+    </section>
+
+
+    <!-- DEMO CASES -->
+    <section class="section section-alt">
+      <div class="container">
+
+        <div class="section-heading">
+
+          <p class="eyebrow">Demonstration Models</p>
+
+          <h2>Demo Cases</h2>
+
+          <p>
+            The following synthetic cases demonstrate different aspects of
+            Reservoir AI. Each case is built from a reservoir simulation deck
+            and processed through the same application workflow.
+          </p>
+
+          <p>
+            Together, they demonstrate conventional model interpretation,
+            grid-quality assessment, model validation, and domain-specific
+            SAGD analysis.
+          </p>
+
+        </div>
+
+
+        <!-- BASE CASE -->
+        <article class="case">
+
+          <div class="case-header">
+            <span class="case-number">01</span>
+
+            <div>
+              <h3>Base Case</h3>
+              <p class="case-location">
+                Clearwater Ridge · North Development
+              </p>
+            </div>
+          </div>
+
+          <div class="case-copy">
+
+            <p>
+              A conventional black-oil model used as the primary reference
+              case for Reservoir AI.
+            </p>
+
+            <p>
+              The model contains a complete reservoir, grid, fluid,
+              rock-fluid, and well description. Reservoir AI converts this
+              information into a structured engineering summary,
+              characterizes reservoir heterogeneity, reconstructs the well
+              inventory, and identifies conditions that deserve engineering
+              review.
+            </p>
+
+            <p>
+              The Base Case is intentionally structurally valid. Its
+              engineering findings illustrate an important distinction within
+              the platform: a model can pass validation while still containing
+              assumptions or relationships that warrant engineering attention.
+            </p>
+
+          </div>
+
+          <div class="metrics">
+
+            <div class="metric">
+              <strong>2.40 km²</strong>
+              <span>Reservoir area</span>
+            </div>
+
+            <div class="metric">
+              <strong>2,400</strong>
+              <span>Grid cells</span>
+            </div>
+
+            <div class="metric">
+              <strong>21.0%</strong>
+              <span>Avg. porosity</span>
+            </div>
+
+            <div class="metric">
+              <strong>240 mD</strong>
+              <span>Avg. permeability</span>
+            </div>
+
+            <div class="metric">
+              <strong>34.0° API</strong>
+              <span>Oil gravity</span>
+            </div>
+
+            <div class="metric">
+              <strong>6</strong>
+              <span>Producers</span>
+            </div>
+
+          </div>
+
+          <div class="case-details">
+
+            <div>
+              <h4>Engineering Diagnostics</h4>
+
+              <ul>
+                <li>High Vertical Permeability Ratio</li>
+                <li>Relative Permeability Curve Direction Review</li>
+                <li>Control After Shut-In</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Validation</h4>
+
+              <p class="status-good">
+                0 validation findings
+              </p>
+
+              <h4>Analysis</h4>
+
+              <ul>
+                <li>8 reservoir layers identified</li>
+                <li>Moderate heterogeneity</li>
+                <li>Dykstra-Parsons ≈ 0.42</li>
+                <li>
+                  Layer 4 has the highest estimated pore-volume contribution
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <figure class="feature-image">
+            <img
+              src="assets/screenshots/base-case-dashboard.svg"
+              alt="Reservoir AI Base Case dashboard"
+            />
+          </figure>
+
+          <figure class="detail-image">
+            <img
+              src="assets/screenshots/base-case-diagnostic.svg"
+              alt="Reservoir AI diagnostic detail"
+            />
+
+            <figcaption>
+              Engineering diagnostics evaluate relationships within the model
+              rather than only checking whether inputs are present.
+            </figcaption>
+          </figure>
+
+        </article>
+
+
+        <!-- GRID QUALITY -->
+        <article class="case">
+
+          <div class="case-header">
+            <span class="case-number">02</span>
+
+            <div>
+              <h3>Grid Quality Review</h3>
+              <p class="case-location">
+                Clearwater Ridge · North Development
+              </p>
+            </div>
+          </div>
+
+          <div class="case-copy">
+
+            <p>
+              A reservoir model designed specifically to demonstrate automated
+              assessment of grid geometry and layer quality.
+            </p>
+
+            <p>
+              Most of the model remains geometrically reasonable. Selected
+              regions deliberately contain localized grid problems, allowing
+              Reservoir AI to identify specific areas requiring attention
+              without characterizing the entire model as poor quality.
+            </p>
+
+          </div>
+
+          <div class="metrics">
+
+            <div class="metric">
+              <strong>3.60 km²</strong>
+              <span>Reservoir area</span>
+            </div>
+
+            <div class="metric">
+              <strong>6,000</strong>
+              <span>Grid cells</span>
+            </div>
+
+            <div class="metric">
+              <strong>10</strong>
+              <span>Layers</span>
+            </div>
+
+            <div class="metric">
+              <strong>18.5%</strong>
+              <span>Avg. porosity</span>
+            </div>
+
+            <div class="metric">
+              <strong>165 mD</strong>
+              <span>Avg. permeability</span>
+            </div>
+
+            <div class="metric">
+              <strong>5</strong>
+              <span>Producers</span>
+            </div>
+
+          </div>
+
+          <div class="case-details">
+
+            <div>
+              <h4>Engineering Diagnostics</h4>
+
+              <ul>
+                <li>Grid Aspect Ratio Extreme</li>
+                <li>Layer High Thickness Variability</li>
+                <li>Layer Near-Zero Thickness</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Validation</h4>
+
+              <p class="status-good">
+                0 validation findings
+              </p>
+
+              <h4>Analysis</h4>
+
+              <ul>
+                <li>10 reservoir layers identified</li>
+                <li>Layer 7 has the highest thickness variability</li>
+                <li>Minimum cell thickness ≈ 0.08 m in Layer 9</li>
+                <li>
+                  Approximately 96% of cells remain below the
+                  aspect-ratio warning threshold
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+          <figure class="feature-image">
+            <img
+              src="assets/screenshots/grid-quality-dashboard.svg"
+              alt="Reservoir AI Grid Quality dashboard"
+            />
+          </figure>
+
+          <figure class="detail-image">
+            <img
+              src="assets/screenshots/grid-quality-diagnostic.svg"
+              alt="Reservoir AI grid quality diagnostic"
+            />
+
+            <figcaption>
+              Localized grid-quality problems are isolated within an
+              otherwise valid reservoir model.
+            </figcaption>
+          </figure>
+
+        </article>
+
+
+        <!-- MODEL QA -->
+        <article class="case">
+
+          <div class="case-header">
+            <span class="case-number">03</span>
+
+            <div>
+              <h3>Model QA Review</h3>
+              <p class="case-location">
+                Pembina South · Reservoir Reassessment Program
+              </p>
+            </div>
+          </div>
+
+          <div class="case-copy">
+
+            <p>
+              A deliberately imperfect reservoir simulation model used to
+              demonstrate Reservoir AI's validation workflow.
+            </p>
+
+            <p>
+              This case contains structural and input-integrity problems
+              representative of issues that can arise during model
+              construction, transfer, or reassessment.
+            </p>
+
+            <p class="callout">
+              Validation evaluates whether the model inputs and structure are
+              internally consistent. Diagnostics evaluate engineering
+              conditions that deserve review.
+            </p>
+
+          </div>
+
+          <div class="metrics">
+
+            <div class="metric">
+              <strong>1.80 km²</strong>
+              <span>Reservoir area</span>
+            </div>
+
+            <div class="metric">
+              <strong>2,160</strong>
+              <span>Grid cells</span>
+            </div>
+
+            <div class="metric">
+              <strong>24.0%</strong>
+              <span>Avg. porosity</span>
+            </div>
+
+            <div class="metric">
+              <strong>310 mD</strong>
+              <span>Avg. permeability</span>
+            </div>
+
+            <div class="metric">
+              <strong>27.0° API</strong>
+              <span>Oil gravity</span>
+            </div>
+
+            <div class="metric">
+              <strong>7</strong>
+              <span>Total wells</span>
+            </div>
+
+          </div>
+
+          <div class="case-details">
+
+            <div>
+              <h4>Validation Findings</h4>
+
+              <p class="status-error">
+                4 findings · 2 errors · 2 warnings
+              </p>
+
+              <ul>
+                <li>Static Property Size Mismatch</li>
+                <li>Incomplete Static Property</li>
+                <li>Missing Required Property</li>
+                <li>Well Definition Inconsistency</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Engineering Diagnostics</h4>
+
+              <ul>
+                <li>Relative Permeability Curve Direction Review</li>
+                <li>High Vertical Permeability Ratio</li>
+                <li>Control After Shut-In</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <figure class="feature-image">
+            <img
+              src="assets/screenshots/model-qa-dashboard.svg"
+              alt="Reservoir AI Model QA dashboard"
+            />
+          </figure>
+
+          <figure class="detail-image">
+            <img
+              src="assets/screenshots/validation-comparison.svg"
+              alt="Reservoir AI validation comparison"
+            />
+
+            <figcaption>
+              Engineering diagnostics and structural validation answer
+              different questions about model quality.
+            </figcaption>
+          </figure>
+
+        </article>
+
+
+        <!-- SAGD -->
+        <article class="case">
+
+          <div class="case-header">
+            <span class="case-number">04</span>
+
+            <div>
+              <h3>SAGD Development</h3>
+              <p class="case-location">
+                Athabasca North · Phase 1 Development
+              </p>
+            </div>
+          </div>
+
+          <div class="case-copy">
+
+            <p>
+              A synthetic thermal-development model used to demonstrate
+              Reservoir AI's domain-specific SAGD analysis.
+            </p>
+
+            <p>
+              The case represents a high-porosity, high-permeability bitumen
+              reservoir with paired horizontal steam injectors and producers.
+            </p>
+
+            <p>
+              Rather than treating wells only as independent model objects,
+              Reservoir AI identifies producer-injector relationships and
+              evaluates the reservoir region surrounding each detected SAGD
+              pair.
+            </p>
+
+          </div>
+
+          <div class="metrics">
+
+            <div class="metric">
+              <strong>1.20 km²</strong>
+              <span>Reservoir area</span>
+            </div>
+
+            <div class="metric">
+              <strong>2,400</strong>
+              <span>Grid cells</span>
+            </div>
+
+            <div class="metric">
+              <strong>20</strong>
+              <span>Layers</span>
+            </div>
+
+            <div class="metric">
+              <strong>32.0%</strong>
+              <span>Avg. porosity</span>
+            </div>
+
+            <div class="metric">
+              <strong>3,500 mD</strong>
+              <span>Avg. permeability</span>
+            </div>
+
+            <div class="metric">
+              <strong>8.5° API</strong>
+              <span>Bitumen</span>
+            </div>
+
+          </div>
+
+          <div class="case-details">
+
+            <div>
+              <h4>SAGD Analysis</h4>
+
+              <p><strong>3 valid well pairs identified</strong></p>
+
+              <ul>
+                <li>P01 – I01</li>
+                <li>P02 – I02</li>
+                <li>P03 – I03</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4>Additional Review</h4>
+
+              <ul>
+                <li>P04 identified as an unpaired producer</li>
+                <li>I04 identified as an unpaired injector</li>
+                <li>I03 contains a Control After Shut-In condition</li>
+              </ul>
+
+              <p>
+                Pair-level analysis can evaluate local porosity, Kv/Kh,
+                vertical separation, and the sampled assessment region
+                surrounding each well pair.
+              </p>
+            </div>
+
+          </div>
+
+          <figure class="feature-image">
+            <img
+              src="assets/screenshots/sagd-dashboard.svg"
+              alt="Reservoir AI SAGD dashboard"
+            />
+          </figure>
+
+          <figure class="detail-image">
+            <img
+              src="assets/screenshots/sagd-pair-analysis.svg"
+              alt="Reservoir AI SAGD pair analysis"
+            />
+
+            <figcaption>
+              Domain-specific analysis identifies SAGD well relationships
+              and evaluates the reservoir surrounding each pair.
+            </figcaption>
+          </figure>
+
+        </article>
+
+      </div>
+    </section>
+
+
+    <!-- TECHNOLOGY -->
+    <section class="section">
+      <div class="container">
+
+        <div class="section-heading">
+
+          <p class="eyebrow">Implementation</p>
+
+          <h2>Technology</h2>
+
+          <p>
+            Reservoir AI is implemented as a modular engineering software
+            platform that separates simulation-model parsing,
+            reservoir-engineering logic, persistence, APIs, and presentation.
+          </p>
+
+        </div>
+
+        <div class="technology-grid">
+
+          <div>
+            <h3>Backend</h3>
+
+            <p class="technology-name">
+              Python · FastAPI · SQLAlchemy
+            </p>
+
+            <ul>
+              <li>Simulation-deck parsing</li>
+              <li>Reservoir domain models</li>
+              <li>Grid-geometry reconstruction</li>
+              <li>Model validation</li>
+              <li>Engineering diagnostics</li>
+              <li>Persistence and API services</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3>Engineering Processing</h3>
+
+            <p class="technology-name">
+              NumPy · Engineering services
+            </p>
+
+            <ul>
+              <li>Static-property analysis</li>
+              <li>Layer characterization</li>
+              <li>Dykstra–Parsons heterogeneity</li>
+              <li>Rock-fluid interpretation</li>
+              <li>Well timeline reconstruction</li>
+              <li>SAGD pair analysis</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3>Frontend</h3>
+
+            <p class="technology-name">
+              React · TypeScript
+            </p>
+
+            <ul>
+              <li>Assets and projects</li>
+              <li>Simulation cases</li>
+              <li>Structured model summaries</li>
+              <li>Validation findings</li>
+              <li>Engineering diagnostics</li>
+              <li>Analysis results</li>
+            </ul>
+          </div>
+
+        </div>
+
+
+        <div class="pipeline">
+
+          <span>Simulation Deck</span>
+          <span>→</span>
+          <span>Parser</span>
+          <span>→</span>
+          <span>Reservoir Domain Model</span>
+          <span>→</span>
+          <span>Validation / Analysis / Diagnostics</span>
+          <span>→</span>
+          <span>Persistence / API</span>
+          <span>→</span>
+          <span>Reservoir AI Interface</span>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- FUTURE WORK -->
+    <section class="section section-alt">
+      <div class="container narrow">
+
+        <p class="eyebrow">Roadmap</p>
+
+        <h2>Future Work</h2>
+
+        <p>
+          Future development will expand Reservoir AI with broader simulator
+          support, simulation-results integration, richer engineering
+          diagnostics, and automated case comparison.
+        </p>
+
+        <p>
+          A key direction is the use of
+          <strong>small language models (SLMs)</strong>
+          for specialized reservoir-engineering tasks, enabling efficient
+          natural-language interaction, model interpretation, and
+          domain-specific assistance with lower computational requirements.
+        </p>
+
+        <p>
+          The long-term goal is to combine deterministic engineering analysis,
+          simulation data, and specialized AI into a practical
+          reservoir-engineering decision-support platform.
+        </p>
+
+      </div>
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="container">
+
+        <h2>Reservoir AI</h2>
+
+        <p class="footer-tagline">
+          Transforming simulation models into engineering knowledge.
+        </p>
+
+        <p class="footer-description">
+          Reservoir AI is an independent engineering software project
+          exploring how structured software architecture,
+          reservoir-engineering analysis, and AI-assisted workflows can
+          improve the interpretation and review of reservoir simulation
+          models.
+        </p>
+
+        <p class="disclaimer">
+          All reservoir models, assets, project names, operating data, and
+          engineering values shown in this showcase are synthetic
+          demonstration data.
+        </p>
+
+      </div>
+    </footer>
+
+  </main>
+
+</body>
+</html>
