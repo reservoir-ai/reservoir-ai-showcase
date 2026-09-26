@@ -24,6 +24,9 @@ const FLOW_STEPS = [
   "Reservoir AI Interface",
 ];
 
+const screenshotUrl = (filename: string) =>
+  `${import.meta.env.BASE_URL}screenshots/v0.4/${filename}`;
+
 const CASES = [
   {
     id: "base-case",
@@ -41,7 +44,10 @@ const CASES = [
       { value: "3", label: "Diagnostics" },
       { value: "0", label: "Validation Findings", highlight: "ok" },
     ] as Stat[],
-    imgLabel: "Reservoir AI screenshot — Base Case",
+    imgLabel: "Base Case — case overview",
+    overviewImg: "base-case-overview.png",
+    detailImg: "base-case-permeability-diagnostic.png",
+    detailLabel: "High Vertical Permeability Ratio — diagnostic detail",
     callout: null as string | null,
     validation: { color: "#34702f", text: "0 validation findings" },
     diagnostics: [
@@ -74,7 +80,10 @@ const CASES = [
       { value: "3", label: "Diagnostics" },
       { value: "0", label: "Validation Findings", highlight: "ok" },
     ] as Stat[],
-    imgLabel: "Reservoir AI screenshot — Grid Quality Review",
+    imgLabel: "Grid Quality Review — case overview",
+    overviewImg: "grid-quality-overview.png",
+    detailImg: "grid-quality-aspect-ratio-diagnostic.png",
+    detailLabel: "Grid Aspect Ratio Extreme — diagnostic detail",
     callout: null as string | null,
     validation: { color: "#34702f", text: "0 validation findings" },
     diagnostics: [
@@ -107,7 +116,10 @@ const CASES = [
       { value: "2", label: "Warnings", highlight: "warn" },
       { value: "3", label: "Diagnostics" },
     ] as Stat[],
-    imgLabel: "Reservoir AI screenshot — Model QA Review",
+    imgLabel: "Model QA Review — case overview",
+    overviewImg: "model-qa-overview.png",
+    detailImg: "model-qa-validation.png",
+    detailLabel: "Model QA Review — validation findings",
     callout: "Validation evaluates whether the model inputs and structure are internally consistent. Diagnostics evaluate engineering conditions that deserve review.",
     validation: { color: "#a2131a", text: "4 findings · 2 errors · 2 warnings" },
     diagnostics: [
@@ -141,7 +153,10 @@ const CASES = [
       { value: "2", label: "Unpaired Wells", highlight: "warn" },
       { value: "1", label: "Diagnostic" },
     ] as Stat[],
-    imgLabel: "Reservoir AI screenshot — SAGD Development",
+    imgLabel: "SAGD Development — case overview",
+    overviewImg: "sagd-overview.png",
+    detailImg: "sagd-unpaired-injector-diagnostic.png",
+    detailLabel: "Unpaired Injector — SAGD pairing diagnostic",
     callout: null as string | null,
     validation: null as { color: string; text: string } | null,
     diagnostics: null as string[] | null,
@@ -492,69 +507,20 @@ function Hero() {
         {/* Right: hero visualization */}
         <div className="flex flex-col gap-[8px] items-start shrink-0 w-[552px]">
           <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.1)] w-full overflow-hidden" style={{ height: 294 }}>
-            <div
-              className="w-full h-full flex flex-col items-center justify-center gap-[12px]"
-              style={{
-                background: "#F8FAFB",
-                color: "#6F8499",
-              }}
+            <a
+              href={screenshotUrl("assets-overview.png")}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-full h-full"
+              aria-label="Open Reservoir AI assets overview screenshot"
             >
-              <div
-                className="flex items-center justify-center rounded-[8px]"
-                style={{
-                  width: 54,
-                  height: 44,
-                  border: "1.5px dashed #A8B6C3",
-                  background: "#FFFFFF",
-                }}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <rect
-                    x="3"
-                    y="4"
-                    width="18"
-                    height="16"
-                    rx="2"
-                    stroke="#8A9AAA"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M6 16L10 12L13 15L16 11L19 15"
-                    stroke="#8A9AAA"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="1.5"
-                    fill="#8A9AAA"
-                  />
-                </svg>
-              </div>
-
-              <div className="text-center">
-                <p
-                  className="m-0 text-[13px] font-semibold"
-                  style={{ color: "#445566" }}
-                >
-                  Screenshot coming soon
-                </p>
-                <p
-                  className="m-0 mt-[3px] text-[11px]"
-                  style={{ color: "#8A9AAA" }}
-                >
-                  Reservoir AI interface
-                </p>
-              </div>
-            </div>
+              <img
+                src={screenshotUrl("assets-overview.png")}
+                alt="Reservoir AI assets overview"
+                className="w-full h-full object-contain"
+                style={{ background: "#F8FAFB" }}
+              />
+            </a>
           </div>
           <p
             className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
@@ -672,69 +638,20 @@ function CaseBlock({ c }: { c: typeof CASES[number] }) {
               className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.1)] w-full overflow-hidden"
               style={{ height: 294 }}
             >
-              <div
-                className="w-full h-full flex flex-col items-center justify-center gap-[12px]"
-                style={{
-                  background: "#F8FAFB",
-                  color: "#6F8499",
-                }}
+              <a
+                href={screenshotUrl(c.overviewImg)}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full h-full"
+                aria-label={`Open ${c.title} overview screenshot`}
               >
-                <div
-                  className="flex items-center justify-center rounded-[8px]"
-                  style={{
-                    width: 54,
-                    height: 44,
-                    border: "1.5px dashed #A8B6C3",
-                    background: "#FFFFFF",
-                  }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <rect
-                      x="3"
-                      y="4"
-                      width="18"
-                      height="16"
-                      rx="2"
-                      stroke="#8A9AAA"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M6 16L10 12L13 15L16 11L19 15"
-                      stroke="#8A9AAA"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="1.5"
-                      fill="#8A9AAA"
-                    />
-                  </svg>
-                </div>
-
-                <div className="text-center">
-                  <p
-                    className="m-0 text-[13px] font-semibold"
-                    style={{ color: "#445566" }}
-                  >
-                    Screenshot coming soon
-                  </p>
-                  <p
-                    className="m-0 mt-[3px] text-[11px]"
-                    style={{ color: "#8A9AAA" }}
-                  >
-                    Reservoir AI interface
-                  </p>
-                </div>
-              </div>
+                <img
+                  src={screenshotUrl(c.overviewImg)}
+                  alt={c.imgLabel}
+                  className="w-full h-full object-contain"
+                  style={{ background: "#F8FAFB" }}
+                />
+              </a>
             </div>
             <p
               className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
@@ -743,6 +660,36 @@ function CaseBlock({ c }: { c: typeof CASES[number] }) {
               {c.imgLabel}
             </p>
           </div>
+        </div>
+
+        {/* Detailed engineering screenshot */}
+        <div className="flex flex-col gap-[8px] items-start w-full mt-[28px]">
+          <a
+            href={screenshotUrl(c.detailImg)}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full"
+            aria-label={`Open ${c.title} detailed screenshot`}
+          >
+            <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] w-full overflow-hidden">
+              <img
+                src={screenshotUrl(c.detailImg)}
+                alt={c.detailLabel}
+                className="w-full h-auto block"
+              />
+            </div>
+          </a>
+
+          <p
+            className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
+            style={{
+              fontFamily: "'Inter:Regular', sans-serif",
+              fontWeight: 400,
+              color: "#445566",
+            }}
+          >
+            {c.detailLabel}
+          </p>
         </div>
       </div>
 
@@ -892,6 +839,99 @@ function DemoCases() {
           <p className="leading-[20px] mb-0">The following synthetic cases demonstrate different aspects of Reservoir AI. Each case is built from a reservoir simulation deck and processed through the same application workflow.</p>
           <p className="leading-[20px] mb-0">&nbsp;</p>
           <p className="leading-[20px]">Together, they demonstrate conventional model interpretation, grid-quality assessment, model validation, and domain-specific SAGD analysis.</p>
+        </div>
+      </div>
+
+      {/* Workspace overview */}
+      <div className="flex flex-col gap-[28px] px-[76px] w-full">
+        <div className="flex flex-col gap-[8px] items-start">
+          <p
+            className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase"
+            style={{
+              fontFamily: "'Inter:Bold', sans-serif",
+              fontWeight: 700,
+              color: "#0e6b6e",
+            }}
+          >
+            Workspace
+          </p>
+
+          <p
+            className="text-[28px] leading-[32px] tracking-[-0.3px]"
+            style={{
+              fontFamily: "'Inter:Semi Bold', sans-serif",
+              fontWeight: 600,
+              color: "#12344d",
+            }}
+          >
+            From assets to simulation cases
+          </p>
+
+          <p
+            className="text-[16px] leading-[22px] max-w-[760px]"
+            style={{
+              fontFamily: "'Inter:Regular', sans-serif",
+              fontWeight: 400,
+              color: "#445566",
+            }}
+          >
+            Reservoir AI organizes engineering work hierarchically across
+            assets, projects, and simulation cases. The workspace provides
+            access to multiple reservoir assets while individual projects
+            group related simulation and engineering-review cases.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-[24px] w-full">
+          <div className="flex flex-col gap-[8px]">
+            <a
+              href={screenshotUrl("assets-overview.png")}
+              target="_blank"
+              rel="noreferrer"
+              className="block"
+              aria-label="Open Assets overview screenshot"
+            >
+              <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] overflow-hidden">
+                <img
+                  src={screenshotUrl("assets-overview.png")}
+                  alt="Reservoir AI Assets workspace"
+                  className="w-full h-auto block"
+                />
+              </div>
+            </a>
+
+            <p
+              className="text-[13px] leading-[20px] text-center"
+              style={{ color: "#445566" }}
+            >
+              Assets workspace — multi-asset portfolio view
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-[8px]">
+            <a
+              href={screenshotUrl("project-overview.png")}
+              target="_blank"
+              rel="noreferrer"
+              className="block"
+              aria-label="Open Project overview screenshot"
+            >
+              <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] overflow-hidden">
+                <img
+                  src={screenshotUrl("project-overview.png")}
+                  alt="Reservoir AI Project workspace"
+                  className="w-full h-auto block"
+                />
+              </div>
+            </a>
+
+            <p
+              className="text-[13px] leading-[20px] text-center"
+              style={{ color: "#445566" }}
+            >
+              Project workspace — simulation cases within a development project
+            </p>
+          </div>
         </div>
       </div>
 
