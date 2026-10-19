@@ -285,18 +285,14 @@ function Hero() {
             </Reveal>
             <Reveal d={220}>
               <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => go("workflow")}
+                <a
+                  href="https://app.reservoir-ai.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hov rounded-[6px] bg-deep px-6 py-3 text-[14px] font-medium text-white hover:bg-teal"
                 >
                   Launch Demo
-                </button>
-                <button
-                  onClick={() => go("architecture")}
-                  className="hov rounded-[6px] border border-deep px-6 py-3 text-[14px] font-medium text-deep hover:bg-deep hover:text-white"
-                >
-                  View Project
-                </button>
+                </a>
               </div>
             </Reveal>
           </div>
