@@ -1,1276 +1,1056 @@
-import React, { useState, useEffect, useRef } from "react";
-import svgPaths from "../imports/svg-m7ivppu5i0";
-import LogoIcon from "./imports/Container/index";
+import { useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+import imgAssets from "@/assets/argos/workflow-assets.png";
+import imgProjects from "@/assets/argos/workflow-projects.png";
+import imgCases from "@/assets/argos/workflow-cases.png";
+import imgOpenCase from "@/assets/argos/workflow-open-case.png";
+import imgCaseOpened from "@/imports/Case_Opened.jpg";
+import imgValidation from "@/assets/argos/model-qa-validation.png";
+import imgReport from "@/assets/argos/report.png";
+import imgSimDeck from "@/assets/argos/simulation-deck-stage.png";
+import imgAnalysis from "@/assets/argos/analysis.png";
+import imgDiagnosis from "@/assets/argos/sagd-unpaired-injector-diagnostic.png";
+import ArgosLogo from "@/imports/ArgosLogo/index";
 
-interface Stat { value: string; label: string; highlight?: "error" | "warn" | "ok"; }
+// ─── Motion primitives ────────────────────────────────────────────────────────
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+const delay = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
-const NAV = [
-  { label: "Demo Cases", id: "demo-cases" },
-  { label: "Technology", id: "technology" },
-  { label: "Future Work", id: "future-work" },
-  { label: "Contact", id: "footer" },
-];
+function useInView<T extends HTMLElement>(threshold = 0.15) {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold, rootMargin: "0px 0px -6% 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, inView };
+}
 
-const FLOW_STEPS = [
-  "Simulation Deck",
-  "Parser",
-  "Reservoir Domain Model",
-  "Validation / Analysis / Diagnostics",
-  "Persistence / API",
-  "Reservoir AI Interface",
-];
-
-const screenshotUrl = (filename: string) =>
-  `${import.meta.env.BASE_URL}screenshots/v0.4/${filename}`;
-
-const CASES = [
-  {
-    id: "base-case",
-    num: "01",
-    title: "Base Case",
-    body: [
-      "A conventional black-oil model used as the primary reference case for Reservoir AI.",
-      "The model contains a complete reservoir, grid, fluid, rock-fluid, and well description. Reservoir AI converts this information into a structured engineering summary, characterises reservoir heterogeneity, reconstructs the well inventory, and identifies conditions that deserve engineering review.",
-    ],
-    stats: [
-      { value: "20×20×8", label: "Grid Dimensions" },
-      { value: "4", label: "Producer Wells" },
-      { value: "8", label: "Reservoir Layers" },
-      { value: "0.42", label: "Dykstra-Parsons" },
-      { value: "3", label: "Diagnostics" },
-      { value: "0", label: "Validation Findings", highlight: "ok" },
-    ] as Stat[],
-    imgLabel: "Base Case — case overview",
-    overviewImg: "base-case-overview.png",
-    detailImg: "base-case-permeability-diagnostic.png",
-    detailLabel: "High Vertical Permeability Ratio — diagnostic detail",
-    callout: null as string | null,
-    validation: { color: "#34702f", text: "0 validation findings" },
-    diagnostics: [
-      "High Vertical Permeability Ratio",
-      "Relative Permeability Curve Direction Review",
-      "Control After Shut-In",
-    ],
-    analysis: [
-      "8 reservoir layers identified",
-      "Moderate heterogeneity",
-      "Dykstra-Parsons ≈ 0.42",
-      "Layer 4 has the highest estimated pore-volume contribution",
-    ],
-    sagd: null as null | { pairs: string[]; additional: string[]; note: string },
-    validationFindings: null as string[] | null,
-  },
-  {
-    id: "grid-quality",
-    num: "02",
-    title: "Grid Quality Review",
-    body: [
-      "A reservoir model designed specifically to demonstrate automated assessment of grid geometry and layer quality.",
-      "Most of the model remains geometrically reasonable. Selected regions deliberately contain localised grid problems, allowing Reservoir AI to identify specific areas requiring attention without characterising the entire model as poor quality.",
-    ],
-    stats: [
-      { value: "25×25×10", label: "Grid Dimensions" },
-      { value: "3", label: "Producer Wells" },
-      { value: "10", label: "Reservoir Layers" },
-      { value: "~4%", label: "High-AR Cells", highlight: "warn" },
-      { value: "3", label: "Diagnostics" },
-      { value: "0", label: "Validation Findings", highlight: "ok" },
-    ] as Stat[],
-    imgLabel: "Grid Quality Review — case overview",
-    overviewImg: "grid-quality-overview.png",
-    detailImg: "grid-quality-aspect-ratio-diagnostic.png",
-    detailLabel: "Grid Aspect Ratio Extreme — diagnostic detail",
-    callout: null as string | null,
-    validation: { color: "#34702f", text: "0 validation findings" },
-    diagnostics: [
-      "Grid Aspect Ratio Extreme",
-      "Layer High Thickness Variability",
-      "Layer Near-Zero Thickness",
-    ],
-    analysis: [
-      "10 reservoir layers identified",
-      "Layer 7 has the highest thickness variability",
-      "Minimum cell thickness ≈ 0.08 m in Layer 9",
-      "Approximately 96% of cells remain below the aspect-ratio warning threshold",
-    ],
-    sagd: null as null | { pairs: string[]; additional: string[]; note: string },
-    validationFindings: null as string[] | null,
-  },
-  {
-    id: "model-qa",
-    num: "03",
-    title: "Model QA Review",
-    body: [
-      "A deliberately imperfect reservoir simulation model used to demonstrate Reservoir AI's validation workflow.",
-      "This case contains structural and input-integrity problems representative of issues that can arise during model construction, transfer, or reassessment.",
-    ],
-    stats: [
-      { value: "20×20×8", label: "Grid Dimensions" },
-      { value: "5", label: "Wells" },
-      { value: "8", label: "Reservoir Layers" },
-      { value: "2", label: "Errors", highlight: "error" },
-      { value: "2", label: "Warnings", highlight: "warn" },
-      { value: "3", label: "Diagnostics" },
-    ] as Stat[],
-    imgLabel: "Model QA Review — case overview",
-    overviewImg: "model-qa-overview.png",
-    detailImg: "model-qa-validation.png",
-    detailLabel: "Model QA Review — validation findings",
-    callout: "Validation evaluates whether the model inputs and structure are internally consistent. Diagnostics evaluate engineering conditions that deserve review.",
-    validation: { color: "#a2131a", text: "4 findings · 2 errors · 2 warnings" },
-    diagnostics: [
-      "Relative Permeability Curve Direction Review",
-      "High Vertical Permeability Ratio",
-      "Control After Shut-In",
-    ],
-    analysis: null as string[] | null,
-    sagd: null as null | { pairs: string[]; additional: string[]; note: string },
-    validationFindings: [
-      "Static Property Size Mismatch",
-      "Incomplete Static Property",
-      "Missing Required Property",
-      "Well Definition Inconsistency",
-    ],
-  },
-  {
-    id: "sagd",
-    num: "04",
-    title: "SAGD Development",
-    body: [
-      "A synthetic thermal-development model used to demonstrate Reservoir AI's domain-specific SAGD analysis.",
-      "The case represents a high-porosity, high-permeability bitumen reservoir with paired horizontal steam injectors and producers.",
-      "Rather than treating wells only as independent model objects, Reservoir AI identifies producer-injector relationships and evaluates the reservoir region surrounding each detected SAGD pair.",
-    ],
-    stats: [
-      { value: "30×20×15", label: "Grid Dimensions" },
-      { value: "8", label: "Total Wells" },
-      { value: "15", label: "Reservoir Layers" },
-      { value: "3", label: "Valid Pairs", highlight: "ok" },
-      { value: "2", label: "Unpaired Wells", highlight: "warn" },
-      { value: "1", label: "Diagnostic" },
-    ] as Stat[],
-    imgLabel: "SAGD Development — case overview",
-    overviewImg: "sagd-overview.png",
-    detailImg: "sagd-unpaired-injector-diagnostic.png",
-    detailLabel: "Unpaired Injector — SAGD pairing diagnostic",
-    callout: null as string | null,
-    validation: null as { color: string; text: string } | null,
-    diagnostics: null as string[] | null,
-    analysis: null as string[] | null,
-    validationFindings: null as string[] | null,
-    sagd: {
-      pairs: ["P01 – I01", "P02 – I02", "P03 – I03"],
-      additional: [
-        "P04 identified as an unpaired producer",
-        "I04 identified as an unpaired injector",
-        "I03 contains a Control After Shut-In condition",
-      ],
-      note: "Pair-level analysis can evaluate local porosity, Kv/Kh, vertical separation, and the sampled assessment region surrounding each well pair.",
-    },
-  },
-];
-
-// ── Reservoir Visualizations ───────────────────────────────────────────────────
-
-function BaseCaseViz() {
-  const layers = [
-    { h: 22, op: 0.72 },
-    { h: 28, op: 0.55 },
-    { h: 18, op: 0.82 },
-    { h: 36, op: 0.96 },
-    { h: 24, op: 0.62 },
-    { h: 16, op: 0.50 },
-    { h: 20, op: 0.66 },
-    { h: 22, op: 0.74 },
-  ];
-  let y = 10;
-  const rows = layers.map((l, i) => { const r = { ...l, y, i }; y += l.h + 3; return r; });
-  const totalH = y + 18;
+function Reveal({
+  children,
+  d = 0,
+  className = "",
+  shot = false,
+}: {
+  children: ReactNode;
+  d?: number;
+  className?: string;
+  shot?: boolean;
+}) {
+  const { ref, inView } = useInView<HTMLDivElement>(0.1);
   return (
-    <svg viewBox={`0 0 400 ${totalH}`} width="100%" height="100%" style={{ display: "block" }}>
-      <rect width="400" height={totalH} fill="#f0f4f7" />
-      {rows.map((r) => (
-        <g key={r.i}>
-          <text x={6} y={r.y + r.h / 2 + 4} fontSize={8} fill="#6f8499" fontFamily="Inter, sans-serif" fontWeight="600">
-            L{r.i + 1}{r.i === 3 ? " ★" : ""}
-          </text>
-          {Array.from({ length: 18 }).map((_, j) => (
-            <rect
-              key={j}
-              x={26 + j * 20}
-              y={r.y}
-              width={18}
-              height={r.h}
-              fill="#12344d"
-              opacity={r.op * (0.7 + 0.3 * Math.abs(Math.sin(j * 0.9 + r.i * 0.7)))}
-              rx={1}
-            />
-          ))}
-        </g>
-      ))}
-      <line x1={176} y1={6} x2={176} y2={totalH - 18} stroke="white" strokeWidth={2.5} strokeDasharray="5,3" />
-      <circle cx={176} cy={14} r={6} fill="#12344d" stroke="white" strokeWidth={1.5} />
-      <text x={185} y={18} fontSize={8} fill="#12344d" fontFamily="Inter, sans-serif" fontWeight="700">PROD-1</text>
-      <rect x={290} y={totalH - 14} width={10} height={8} fill="#12344d" opacity={0.96} rx={1} />
-      <text x={304} y={totalH - 7} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">High Kh</text>
-      <rect x={345} y={totalH - 14} width={10} height={8} fill="#12344d" opacity={0.48} rx={1} />
-      <text x={359} y={totalH - 7} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Low Kh</text>
-    </svg>
+    <div
+      ref={ref}
+      className={`${shot ? "rv-shot" : "rv"} ${inView ? "in" : ""} ${className}`}
+      style={delay(d)}
+    >
+      {children}
+    </div>
   );
 }
 
-function GridQualityViz() {
-  const cols = 12, rows = 10, cw = 28, ch = 22, pad = 18;
-  const arCells = new Set(["2-6", "3-6", "2-7", "3-7", "2-8"]);
-  const nzCells = new Set(["9-3", "10-3", "9-4"]);
-  const W = cols * cw + pad * 2, H = rows * ch + pad * 2 + 28;
+function useTrackProgress(n: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const calc = () => {
+      const el = ref.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const total = r.height - ((el.firstElementChild as HTMLElement | null)?.offsetHeight ?? window.innerHeight - 56);
+      setProgress(total > 0 ? Math.min(1, Math.max(0, (56 - r.top) / total)) : 0);
+    };
+    const on = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(calc);
+    };
+    calc();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+    };
+  }, []);
+  const raw = Math.min(n - 1, Math.floor(progress * n));
+  const [active, setActive] = useState(raw);
+  useEffect(() => {
+    if (raw === active) return;
+    const t = window.setTimeout(() => setActive(raw), 90);
+    return () => window.clearTimeout(t);
+  }, [raw, active]);
+  const goTo = (i: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const total = el.offsetHeight - ((el.firstElementChild as HTMLElement | null)?.offsetHeight ?? window.innerHeight - 56);
+    const top = el.getBoundingClientRect().top + window.scrollY - 56;
+    window.scrollTo({ top: top + ((i + 0.05) / n) * total });
+  };
+  return { ref, progress, active, goTo };
+}
+
+// ─── Shared pieces ────────────────────────────────────────────────────────────
+
+function ArgosLogoMark({ scale = 1 }: { scale?: number }) {
+  const w = 40.2812 * scale;
+  const h = 33.2812 * scale;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%">
-      <rect width={W} height={H} fill="#f0f4f7" />
-      {Array.from({ length: rows }).map((_, row) =>
-        Array.from({ length: cols }).map((_, col) => {
-          const k = `${col + 1}-${row + 1}`;
-          const isAR = arCells.has(k), isNZ = nzCells.has(k);
-          return (
-            <rect key={k}
-              x={pad + col * cw} y={pad + row * ch}
-              width={cw - 1} height={ch - 1}
-              fill={isNZ ? "#fef3c7" : isAR ? "#fee2e2" : "#dbeafe"}
-              stroke={isNZ ? "#f59e0b" : isAR ? "#ef4444" : "#93c5fd"}
-              strokeWidth={isAR || isNZ ? 1.5 : 0.5}
-              rx={1}
-            />
-          );
-        })
-      )}
-      <text x={pad + 1 * cw + 2} y={pad + 6 * ch - 2} fontSize={7} fill="#dc2626" fontFamily="Inter, sans-serif" fontWeight="700">AR Issue</text>
-      <text x={pad + 7 * cw + 2} y={pad + 3 * ch - 2} fontSize={7} fill="#d97706" fontFamily="Inter, sans-serif" fontWeight="700">~0 m thick</text>
-      {[0.3, 0.6].map((v, i) => (
-        <g key={i}>
-          <rect x={pad + 14 + i * 130} y={rows * ch + pad + 8} width={10} height={8}
-            fill={i === 0 ? "#fee2e2" : "#fef3c7"}
-            stroke={i === 0 ? "#ef4444" : "#f59e0b"} strokeWidth={1} rx={1} />
-          <text x={pad + 28 + i * 130} y={rows * ch + pad + 15} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">
-            {i === 0 ? "Aspect-ratio warning" : "Near-zero thickness"}
-          </text>
-        </g>
-      ))}
-      <rect x={pad + 274} y={rows * ch + pad + 8} width={10} height={8} fill="#dbeafe" stroke="#93c5fd" strokeWidth={0.5} rx={1} />
-      <text x={pad + 288} y={rows * ch + pad + 15} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Conforming</text>
-    </svg>
+    <div style={{ width: w, height: h, position: "relative", flexShrink: 0 }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", position: "absolute", top: 0, left: 0 }}>
+        <ArgosLogo />
+      </div>
+    </div>
   );
 }
 
-function ModelQAViz() {
-  const cols = 8, rows = 6, cw = 44, ch = 34, pad = 20;
-  const errors = new Set(["3-1", "5-3"]);
-  const warnings = new Set(["1-4", "6-2"]);
-  const wells = [{ c: 2, r: 0 }, { c: 5, r: 0 }, { c: 1, r: 5 }, { c: 4, r: 5 }, { c: 7, r: 3 }];
-  const W = cols * cw + pad * 2, H = rows * ch + pad * 2 + 36;
+function Shot({
+  src,
+  alt,
+  className = "",
+  fit = "cover",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  fit?: "cover" | "contain";
+}) {
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%">
-      <rect width={W} height={H} fill="#f8f9fa" />
-      {Array.from({ length: rows }).map((_, row) =>
-        Array.from({ length: cols }).map((_, col) => {
-          const k = `${col}-${row}`;
-          const isErr = errors.has(k), isWarn = warnings.has(k);
-          return (
-            <g key={k}>
-              <rect x={pad + col * cw + 1} y={pad + row * ch + 1} width={cw - 2} height={ch - 2}
-                fill={isErr ? "#fef2f2" : isWarn ? "#fffbeb" : "#f0f4f7"}
-                stroke={isErr ? "#fca5a5" : isWarn ? "#fcd34d" : "#d1d5db"}
-                strokeWidth={1} rx={2} />
-              {isErr && (
-                <>
-                  <circle cx={pad + col * cw + cw - 11} cy={pad + row * ch + 11} r={8} fill="#dc2626" />
-                  <text x={pad + col * cw + cw - 11} y={pad + row * ch + 15} fontSize={9} fill="white"
-                    fontFamily="Inter, sans-serif" fontWeight="700" textAnchor="middle">E</text>
-                </>
-              )}
-              {isWarn && (
-                <>
-                  <polygon
-                    points={`${pad + col * cw + cw - 11},${pad + row * ch + 4} ${pad + col * cw + cw - 3},${pad + row * ch + 18} ${pad + col * cw + cw - 19},${pad + row * ch + 18}`}
-                    fill="#f59e0b" />
-                  <text x={pad + col * cw + cw - 11} y={pad + row * ch + 17} fontSize={8} fill="white"
-                    fontFamily="Inter, sans-serif" fontWeight="700" textAnchor="middle">!</text>
-                </>
-              )}
-            </g>
-          );
-        })
-      )}
-      {wells.map((w, i) => (
-        <g key={i}>
-          <circle cx={pad + w.c * cw + cw / 2} cy={pad + w.r * ch + ch / 2} r={6} fill="#12344d" stroke="white" strokeWidth={1.5} />
-          <line x1={pad + w.c * cw + cw / 2} y1={pad + w.r * ch + ch / 2 - 4}
-            x2={pad + w.c * cw + cw / 2} y2={pad + w.r * ch + ch / 2 + 4}
-            stroke="white" strokeWidth={1.5} />
-        </g>
-      ))}
-      <circle cx={pad + 8} cy={rows * ch + pad + 18} r={6} fill="#dc2626" />
-      <text x={pad + 8} y={rows * ch + pad + 22} fontSize={7} fill="white" fontFamily="Inter, sans-serif" fontWeight="700" textAnchor="middle">E</text>
-      <text x={pad + 18} y={rows * ch + pad + 22} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Error (2)</text>
-      <polygon points={`${pad + 115},${rows * ch + pad + 12} ${pad + 122},${rows * ch + pad + 24} ${pad + 108},${rows * ch + pad + 24}`} fill="#f59e0b" />
-      <text x={pad + 127} y={rows * ch + pad + 22} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Warning (2)</text>
-      <circle cx={pad + 240} cy={rows * ch + pad + 18} r={6} fill="#12344d" stroke="white" strokeWidth={1.5} />
-      <text x={pad + 250} y={rows * ch + pad + 22} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Well</text>
-    </svg>
+    <div className={`frame ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        className={`block h-full w-full ${fit === "cover" ? "object-cover" : "object-contain"} object-top`}
+        draggable={false}
+      />
+    </div>
   );
 }
 
-function SAGDViz() {
-  const W = 400, H = 220, px = 36, py = 18;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%">
-      <defs>
-        <radialGradient id="steam0" cx="50%" cy="80%" r="65%">
-          <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.55} />
-          <stop offset="50%" stopColor="#fb923c" stopOpacity={0.25} />
-          <stop offset="100%" stopColor="#1e4976" stopOpacity={0.08} />
-        </radialGradient>
-        <linearGradient id="resGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1e4976" stopOpacity={0.10} />
-          <stop offset="100%" stopColor="#1e4976" stopOpacity={0.32} />
-        </linearGradient>
-      </defs>
-      <rect x={px} y={py} width={W - px * 2} height={H - py * 2} fill="url(#resGrad)" rx={4} stroke="#c4d4e0" strokeWidth={0.5} />
-      {Array.from({ length: 7 }).map((_, i) => (
-        <line key={i} x1={px} y1={py + (i + 1) * (H - py * 2) / 8} x2={W - px} y2={py + (i + 1) * (H - py * 2) / 8}
-          stroke="#c4d4e0" strokeWidth={0.5} strokeDasharray="4,4" />
-      ))}
-      {[105, 195, 285].map((cx, i) => (
-        <g key={i}>
-          <ellipse cx={cx} cy={108} rx={37} ry={54} fill="url(#steam0)" />
-          <ellipse cx={cx} cy={118} rx={24} ry={34} fill="none" stroke="#fb923c" strokeWidth={0.8} opacity={0.45} />
-          <ellipse cx={cx} cy={126} rx={13} ry={18} fill="none" stroke="#fbbf24" strokeWidth={0.8} opacity={0.45} />
-          <line x1={cx} y1={py} x2={cx} y2={140} stroke="#6f8499" strokeWidth={1} strokeDasharray="3,3" />
-          <line x1={cx - 34} y1={142} x2={cx + 34} y2={142} stroke="#dc2626" strokeWidth={4} strokeLinecap="round" />
-          <text x={cx} y={137} fontSize={7} fill="#dc2626" fontFamily="Inter, sans-serif" fontWeight="700" textAnchor="middle">I0{i + 1}</text>
-          <line x1={cx - 34} y1={162} x2={cx + 34} y2={162} stroke="#12344d" strokeWidth={4} strokeLinecap="round" />
-          <text x={cx} y={175} fontSize={7} fill="#12344d" fontFamily="Inter, sans-serif" fontWeight="700" textAnchor="middle">P0{i + 1}</text>
-        </g>
-      ))}
-      <line x1={348} y1={128} x2={376} y2={128} stroke="#dc2626" strokeWidth={3} strokeLinecap="round" strokeDasharray="5,3" />
-      <text x={362} y={122} fontSize={7} fill="#dc2626" fontFamily="Inter, sans-serif" textAnchor="middle">I04</text>
-      <line x1={348} y1={168} x2={376} y2={168} stroke="#12344d" strokeWidth={3} strokeLinecap="round" strokeDasharray="5,3" />
-      <text x={362} y={182} fontSize={7} fill="#12344d" fontFamily="Inter, sans-serif" textAnchor="middle">P04</text>
-      <rect x={px} y={H - py - 2} width={14} height={4} fill="#dc2626" rx={2} />
-      <text x={px + 18} y={H - py + 1} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Injector</text>
-      <rect x={px + 72} y={H - py - 2} width={14} height={4} fill="#12344d" rx={2} />
-      <text x={px + 90} y={H - py + 1} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Producer</text>
-      <ellipse cx={px + 168} cy={H - py - 1} rx={9} ry={4} fill="url(#steam0)" />
-      <text x={px + 182} y={H - py + 1} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Steam chamber</text>
-      <line x1={px + 278} y1={H - py - 2} x2={px + 292} y2={H - py - 2} stroke="#6f8499" strokeWidth={2} strokeDasharray="4,2" />
-      <text x={px + 296} y={H - py + 1} fontSize={7} fill="#6f8499" fontFamily="Inter, sans-serif">Unpaired</text>
-    </svg>
-  );
-}
-
-const VIZ: Record<string, () => React.ReactElement> = {
-  "base-case": BaseCaseViz,
-  "grid-quality": GridQualityViz,
-  "model-qa": ModelQAViz,
-  "sagd": SAGDViz,
+const gridBg: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, #E8ECEF 1px, transparent 1px), linear-gradient(to bottom, #E8ECEF 1px, transparent 1px)",
+  backgroundSize: "32px 32px",
 };
 
-// ── Utility ────────────────────────────────────────────────────────────────────
 
-function jumpTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+
+function TextLink({ children, onClick, light = false }: { children: ReactNode; onClick?: () => void; light?: boolean }) {
+  return (
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.();
+      }}
+      className={`hov link-line t-body pb-0.5 ${light ? "text-white/80 hover:text-white" : "text-teal hover:text-deep"}`}
+    >
+      {children}
+    </a>
+  );
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
+// ─── Navigation ───────────────────────────────────────────────────────────────
 
-function Header({ active }: { active: string }) {
+function Nav() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    const h = () => setScrolled(window.scrollY > 8);
+    h();
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
   }, []);
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full transition-shadow duration-200"
-      style={{
-        background: "#12344d",
-        boxShadow: scrolled ? "0 2px 16px rgba(0,0,0,0.22)" : "none",
-      }}
+    <nav
+      className="fixed inset-x-0 top-0 z-50 border-b bg-white transition-[border-color] duration-300"
+      style={{ borderColor: scrolled ? "#E8ECEF" : "transparent" }}
+      aria-label="Primary"
     >
-      <div className="flex items-center justify-between px-[76px] py-[24px]">
-        {/* Logo */}
-        <button
-          onClick={() => jumpTo("hero")}
-          className="flex items-center gap-[12px] cursor-pointer"
-        >
-          <div className="shrink-0" style={{ width: 40.281, height: 33.281 }}>
-            <LogoIcon />
-          </div>
-          <div className="flex flex-col items-start gap-[1px]">
-            <span
-              className="text-white text-[18px] tracking-[-0.04px] whitespace-nowrap"
-              style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700 }}
-            >
-              Argos
-            </span>
-            <span
-              className="text-[13px] tracking-[0.02px] whitespace-nowrap"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "rgba(255,255,255,0.55)" }}
-            >
-              Reservoir Intelligence
-            </span>
+      <div className="wrap flex h-14 items-center justify-between">
+        <button onClick={() => window.scrollTo({ top: 0 })} className="flex items-center gap-3" aria-label="Argos — Reservoir Intelligence, back to top">
+          <ArgosLogoMark scale={0.6} />
+          <div className="flex flex-col leading-tight text-left">
+            <span className="t-h4 text-deep">Argos</span>
+            <span className="t-small text-ink3">Reservoir Intelligence</span>
           </div>
         </button>
 
-        {/* Nav */}
-        <nav className="flex items-center gap-[10px]">
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => jumpTo(n.id)}
-              className="px-[12px] py-[6px] rounded-[4px] text-[14px] leading-[18px] tracking-[-0.08px] whitespace-nowrap transition-colors duration-150 cursor-pointer"
-              style={{
-                fontFamily: "'Inter:Semi Bold', sans-serif",
-                fontWeight: 600,
-                color: active === n.id ? "white" : "rgba(255,255,255,0.65)",
-                background: active === n.id ? "rgba(255,255,255,0.12)" : "transparent",
-              }}
-            >
-              {n.label}
+        <div className="hidden items-center gap-8 md:flex">
+          {[
+            ["Overview", "problem"],
+            ["Workflow", "workflow"],
+            ["Architecture", "architecture"],
+            ["Future", "future"],
+            ["About", "about"],
+          ].map(([label, id]) => (
+            <button key={id} onClick={() => go(id)} className="hov t-body text-ink2 hover:text-teal">
+              {label}
             </button>
           ))}
-        </nav>
+        </div>
       </div>
-    </header>
+    </nav>
   );
 }
 
-// ── ArrowForward icon ─────────────────────────────────────────────────────────
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 
-function ArrowIcon() {
+function Typewriter({ text, start = 400, speed = 55 }: { text: string; start?: number; speed?: number }) {
+  const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [n, setN] = useState(reduce ? text.length : 0);
+  useEffect(() => {
+    if (reduce) return;
+    let i = 0;
+    let t = window.setTimeout(function tick() {
+      i += 1;
+      setN(i);
+      if (i < text.length) t = window.setTimeout(tick, speed);
+    }, start);
+    return () => window.clearTimeout(t);
+  }, [text, start, speed, reduce]);
+  let idx = 0;
+  const words = text.split(" ");
   return (
-    <div className="flex items-center justify-center size-[20px]">
-      <div className="rotate-90 size-[20px]">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <g clipPath="url(#arr)">
-            <path d={svgPaths.p6903c80} fill="white" />
-          </g>
-          <defs>
-            <clipPath id="arr"><rect width="20" height="20" fill="white" /></clipPath>
-          </defs>
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden>
+        {words.map((w, wi) => (
+          <span key={wi}>
+            <span className="whitespace-nowrap">
+              {Array.from(w).map((ch) => {
+                const i = idx++;
+                const cls = [
+                  "relative",
+                  i >= n ? "opacity-0" : "",
+                  i === n - 1 ? "tw-after" : "",
+                ].join(" ");
+                return (
+                  <span key={i} className={cls}>
+                    {ch}
+                  </span>
+                );
+              })}
+            </span>
+            {wi < words.length - 1 && (
+              <span className={`relative ${idx === n - 1 ? "tw-after" : ""}`}>
+                {(idx++, " ")}
+              </span>
+            )}
+          </span>
+        ))}
+      </span>
+    </>
+  );
+}
+
+function Hero() {
+  return (
+    <section id="hero" className="relative flex min-h-screen flex-col overflow-hidden bg-white pt-14">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, #E8ECEF55 1px, transparent 1px), linear-gradient(to bottom, #E8ECEF55 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
+      />
+      <div className="wrap relative flex flex-1 items-center">
+        <div className="grid w-full items-center gap-14 py-16 lg:grid-cols-12 lg:gap-12 lg:py-20">
+          <div className="lg:col-span-5">
+            <Reveal d={60}>
+              <h1 className="mb-6 text-5xl leading-[1.06] font-bold tracking-tight text-deep lg:text-[54px]">
+                <Typewriter text="Argos — Reservoir Intelligence" />
+              </h1>
+            </Reveal>
+            <Reveal d={140}>
+              <p className="mb-10 max-w-md text-[15px] leading-relaxed text-ink2">
+                Argos converts reservoir simulation decks into a structured engineering representation that enables
+                model validation, analysis, and diagnosis, helping reservoir engineers extract insight, identify
+                inconsistencies, and detect potential modeling issues.
+              </p>
+            </Reveal>
+            <Reveal d={220}>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => go("workflow")}
+                  className="hov rounded-[6px] bg-deep px-6 py-3 text-[14px] font-medium text-white hover:bg-teal"
+                >
+                  Launch Demo
+                </button>
+                <button
+                  onClick={() => go("architecture")}
+                  className="hov rounded-[6px] border border-deep px-6 py-3 text-[14px] font-medium text-deep hover:bg-deep hover:text-white"
+                >
+                  View Project
+                </button>
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal shot d={160} className="lg:col-span-7">
+            <div className="frame" style={{ maxHeight: 560 }}>
+              <img
+                src={imgOpenCase}
+                alt="Argos Open Case dashboard showing Summary tiles for Reservoir, Grid, Fluid, Rock-Fluid and Wells, with Diagnosis, Validation and Analysis panels"
+                className="block w-full object-cover object-top"
+                draggable={false}
+              />
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── The Engineering Problem ──────────────────────────────────────────────────
+
+function SystemDiagram() {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [vars, setVars] = useState<CSSProperties>({});
+  useEffect(() => {
+    const measure = () => {
+      const f = frameRef.current;
+      const i = imgRef.current;
+      if (!f || !i || !i.clientHeight) return;
+      const dist = Math.max(0, i.clientHeight - f.clientHeight);
+      setVars({ "--end": `-${dist}px`, "--dur": `${Math.round(dist / 45)}s` } as CSSProperties);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (frameRef.current) ro.observe(frameRef.current);
+    imgRef.current?.addEventListener("load", measure);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <Reveal shot>
+      <div ref={frameRef} className="frame relative aspect-[2880/1682] overflow-hidden bg-white">
+        <img
+          ref={imgRef}
+          src={imgReport}
+          alt="A long Argos report page, slowly scrolling to show its length"
+          className="report-scroll block w-full"
+          style={vars}
+          draggable={false}
+        />
+      </div>
+    </Reveal>
+  );
+}
+
+function Problem() {
+  return (
+    <section id="problem" className="bg-offwhite py-24 lg:py-32">
+      <div className="wrap">
+        <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-x-16">
+          <div className="lg:col-span-5">
+            <Reveal>
+              <h2 className="t-h2 mb-8 max-w-[380px] text-deep">The Engineering Problem</h2>
+            </Reveal>
+            <Reveal d={120}>
+              <div className="t-body space-y-4 text-ink2">
+                <p>
+                  A CMG simulation deck contains interconnected information describing the reservoir,
+                  grid, fluids, rock-fluid relationships, wells, schedules, and simulation configuration.
+                </p>
+                <p>
+                  Understanding a model often means navigating complex technical inputs and
+                  reconstructing how those pieces fit together.
+                </p>              </div>
+            </Reveal>
+          </div>
+          <div className="lg:col-span-7">
+            <SystemDiagram />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Detailed Transformation Stages ───────────────────────────────────────────
+
+type Crop = { x: number; y: number; w: number; alt: string };
+const IMG_W = 1557;
+
+const stages: {
+  num: string;
+  title: string;
+  intro: string;
+  list?: string[];
+  note?: string;
+  question?: string;
+  crop?: Crop;
+  img?: { src: string; alt: string };
+  placeholder?: string;
+  caption: string;
+}[] = [
+  {
+    num: "01",
+    title: "Simulation Deck",
+    intro:
+      "The platform reads grid, rock, fluid, rock-fluid, well/schedule data directly from the simulation deck and brings these elements together into a unified representation of the reservoir model.",
+    img: { src: imgSimDeck, alt: "Simulation data file in a text editor, showing the case header comments and CMG keywords such as TITLE1, GRID CORNER and COORD" },
+    caption: "Simulation deck / input file",
+  },
+  {
+    num: "02",
+    title: "Model Validation",
+    intro:
+      "Validation checks whether the simulation model is internally consistent and structurally complete before further interpretation.",
+    list: [
+      "Verifying that static property arrays match the grid dimensions",
+      "Checking grid geometry for invalid or inconsistent cell definitions",
+      "Confirming that well and schedule references are valid",
+      "Detecting controls applied after a well has been shut in",
+      "Identifying missing or incompatible model information",
+    ],
+    note: "Validation focuses on whether the model is correctly defined and internally coherent.",
+    question: "Validation answers the question: Is the model correctly defined?",
+    img: { src: imgValidation, alt: "Argos Validation panel listing issues by severity, issue and count" },
+    caption: "Validation findings",
+  },
+  {
+    num: "03",
+    title: "Engineering Analysis",
+    intro:
+      "Analysis derives quantitative engineering information from the model beyond what is directly stated in the simulation deck.",
+    list: [
+      "Reservoir area and thickness characterization",
+      "Porosity and permeability statistics",
+      "Heterogeneity levels",
+      "Layer-by-layer property analysis",
+      "Grid cell geometry and average cell dimensions",
+      "Well inventory and producer/injector classification",
+      "Well timeline reconstruction",
+      "SAGD pair identification and characterization",
+    ],
+    question:
+      "Analysis answers the question: What does this model tell us about the reservoir and its development configuration?",
+    img: { src: imgAnalysis, alt: "Argos Analysis panel listing analysis results for the opened case" },
+    caption: "Analysis results",
+  },
+  {
+    num: "04",
+    title: "Engineering Diagnosis",
+    intro:
+      "Diagnosis evaluates the analyzed model for conditions that may be technically valid but deserve engineering attention.",
+    list: [
+      "Layers with unusually high thickness variability",
+      "Cells or layers with near-zero thickness",
+      "Unusual property distributions",
+      "Potentially problematic well or schedule configurations",
+      "Patterns that may affect model quality, interpretation, or simulation behaviour",
+    ],
+    question: "Diagnosis answers the question: What in this model should an engineer look at more closely?",
+    img: { src: imgDiagnosis, alt: "Argos Diagnosis panel listing findings with confidence levels, recommendation and potential impact" },
+    caption: "Engineering diagnostics",
+  },
+];
+
+function StageVisual({ s }: { s: (typeof stages)[number] }) {
+  if (s.img) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-offwhite p-4">
+        <img src={s.img.src} alt={s.img.alt} draggable={false} className="max-h-full max-w-full object-contain" />
+      </div>
+    );
+  }
+  if (s.crop) {
+    const { x, y, w, alt } = s.crop;
+    const k = 100 / w;
+    return (
+      <img
+        src={imgCaseOpened}
+        alt={alt}
+        draggable={false}
+        className="absolute max-w-none"
+        style={{ width: `${IMG_W * k}cqw`, left: `${-x * k}cqw`, top: `${-y * k}cqw` }}
+      />
+    );
+  }
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-offwhite p-6" style={gridBg}>
+      <div className="t-small border border-dashed border-slate2 bg-white px-5 py-3 text-center text-slate">
+        {s.placeholder}
+      </div>
+    </div>
+  );
+}
+
+function StageCopy({ s, compact = false }: { s: (typeof stages)[number]; compact?: boolean }) {
+  return (
+    <div>
+      {!compact && (
+        <>
+          <div className="t-cap mb-3 text-teal">{s.num}</div>
+          <h3 className="t-h2 mb-4 text-deep">{s.title}</h3>
+        </>
+      )}
+      <p className="t-body max-w-[460px] text-ink2">{s.intro}</p>
+      {s.list && (
+        <>
+          <p className="t-bodyb mt-5 mb-2 text-ink">Examples include:</p>
+          <ul className="t-body max-w-[460px] space-y-1.5 text-ink2">
+            {s.list.map((b) => (
+              <li key={b} className="relative pl-4">
+                <span className="absolute top-[0.7em] left-0 h-px w-2 bg-teal" />
+                {b}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {s.note && <p className="t-body mt-4 max-w-[460px] text-ink2">{s.note}</p>}
+      {s.question && (
+        <p className="t-h4 mt-6 max-w-[460px] border-l-2 border-teal pl-4 text-deep">{s.question}</p>
+      )}
+    </div>
+  );
+}
+
+function Stages() {
+  const n = stages.length;
+  const { ref, progress, active, goTo } = useTrackProgress(n);
+  const st = (i: number) => (i === active ? "on" : i < active ? "before" : "after");
+
+  return (
+    <section id="stages" className="border-t border-formation bg-white pt-24 lg:pt-[104px]">
+      <div className="wrap lg:hidden">
+        <Reveal>
+          <h2 className="t-h2 text-center text-deep">From Simulation Deck to Reservoir Intelligence</h2>
+        </Reveal>
+      </div>
+
+      {/* Desktop: sticky scroll-driven stages */}
+      <div ref={ref} className="relative hidden lg:block" style={{ height: `${n * 90}vh` }}>
+        <div className="sticky top-14 bg-white pt-6">
+          <div className="wrap">
+            <h2 className="t-h2 mb-12 text-center text-deep">From Simulation Deck to Reservoir Intelligence</h2>
+            <ol className="grid grid-cols-4" aria-label="Transformation stages">
+              {stages.map((s, i) => {
+                const reached = i <= active;
+                const fill = i < active ? 1 : i === active ? Math.max(0.12, progress * n - i) : 0;
+                return (
+                  <li key={s.num} className="relative">
+                    <button
+                      onClick={() => goTo(i)}
+                      aria-current={i === active ? "step" : undefined}
+                      className="group block w-full pt-7 pr-6 text-left"
+                    >
+                      <span className="absolute top-0 left-0 h-px w-full bg-formation" />
+                      <span
+                        className="absolute top-0 left-0 h-px w-full origin-left bg-teal"
+                        style={{ transform: `scaleX(${fill})`, transition: "transform 500ms var(--ease)" }}
+                      />
+                      <span
+                        className={`absolute top-0 left-0 h-[7px] w-[7px] -translate-y-[3px] rounded-full transition-colors duration-500 ${reached ? "bg-deep" : "bg-[#C4C4C4]"}`}
+                      />
+                      <span className={`t-cap hov mb-2 block ${reached ? "text-teal" : "text-ink3"}`}>{s.num}</span>
+                      <span
+                        className={`t-h3b hov block ${i === active ? "text-deep" : "text-ink3 group-hover:text-slate"}`}
+                      >
+                        {s.title}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="mt-10 grid grid-cols-12 items-start gap-x-14">
+              <div className="col-span-5">
+                <div className="grid">
+                  {stages.map((s, i) => (
+                    <div key={s.num} className="xf" data-s={st(i)} aria-hidden={i !== active}>
+                      <StageCopy s={s} compact />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="col-span-7">
+                <div className="frame relative aspect-[2/1] [container-type:inline-size]">
+                  {stages.map((s, i) => (
+                    <div key={s.num} className="slide overflow-hidden" data-s={st(i)} aria-hidden={i !== active}>
+                      <StageVisual s={s} />
+                    </div>
+                  ))}
+                </div>
+                <div className="t-cap mt-3 flex justify-between text-ink3">
+                  <span>{stages[active].caption}</span>
+                  <span>{stages[active].num} / 04</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tablet / mobile: stacked */}
+      <div className="wrap mt-12 space-y-20 pb-24 lg:hidden">
+        {stages.map((s) => (
+          <Reveal key={s.num}>
+            <StageCopy s={s} />
+            <div className="-mx-6 mt-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+              <div className="frame relative aspect-[2/1] min-w-[520px] [container-type:inline-size] sm:min-w-0">
+                <StageVisual s={s} />
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <div className="hidden h-24 lg:block lg:h-32" />
+    </section>
+  );
+}
+
+// ─── Product Workflow ─────────────────────────────────────────────────────────
+
+const workflowSteps = [
+  {
+    num: "01",
+    title: "Assets",
+    heading: "Start with the asset.",
+    desc: "View high-level reservoir and development information and select the asset containing the simulation work to review.",
+    img: imgAssets,
+    alt: "Argos Assets screen showing a grid of asset cards for Christina Lake with reservoir properties including Hydrocarbon Type, Development Stage, Production, OOIP, and Recovery Factor",
+  },
+  {
+    num: "02",
+    title: "Projects",
+    heading: "Move into the engineering study.",
+    desc: "Projects organise related simulation work and provide context around the study, simulator, cases, and engineering objective.",
+    img: imgProjects,
+    alt: "Argos Projects screen showing project cards for Christina Lake including ES-SAGD Pilot Evaluation and other studies with case counts and simulator information",
+  },
+  {
+    num: "03",
+    title: "Cases",
+    heading: "Choose the scenario.",
+    desc: "Each project contains simulation cases representing different model scenarios or engineering assumptions.",
+    img: imgCases,
+    alt: "Argos Cases screen with a list of cases in the left panel including High Case scenarios and a main panel showing no case is selected",
+  },
+  {
+    num: "04",
+    title: "Open Case",
+    heading: "Inspect the model.",
+    desc: "When a case is opened, Argos presents parsed simulation information through a structured engineering dashboard.",
+    img: imgOpenCase,
+    alt: "Argos Open Case dashboard for Low Case showing Summary tiles for Reservoir, Grid, Fluid, Rock-Fluid, and Wells, plus Diagnosis findings and Validation sections",
+  },
+];
+
+function Workflow() {
+  const n = workflowSteps.length;
+  const { ref, progress, active, goTo } = useTrackProgress(n);
+  const st = (i: number) => (i === active ? "on" : i < active ? "before" : "after");
+
+  return (
+    <section id="workflow" className="border-t border-formation bg-white pt-24 lg:pt-[104px]">
+      <div className="wrap sticky top-14 z-10 bg-white pb-4 lg:hidden">
+        <Reveal d={60}>
+          <h2 className="t-h2 mb-4 text-deep">Navigate from asset to engineering detail.</h2>
+        </Reveal>
+        <Reveal d={120}>
+          <p className="t-body max-w-[460px] text-ink2">
+            Argos organises simulation work using a simple hierarchy that mirrors how engineers
+            move through reservoir studies.
+          </p>
+        </Reveal>
+      </div>
+
+      {/* Desktop: sticky walkthrough */}
+      <div ref={ref} className="relative hidden lg:block" style={{ height: `${n * 90}vh` }}>
+        <div className="sticky top-14 bg-white pt-6">
+          <div className="wrap">
+            <h2 className="t-h2 mb-3 text-deep">Navigate from asset to engineering detail.</h2>
+            <p className="t-body mb-10 max-w-[560px] text-ink2">
+              Argos organises simulation work using a simple hierarchy that mirrors how engineers
+              move through reservoir studies.
+            </p>
+          </div>
+          <div className="wrap grid grid-cols-12 items-center gap-x-14">
+            <div className="relative col-span-4">
+              <div className="absolute top-0 bottom-0 left-0 w-px bg-formation">
+                <div
+                  className="absolute top-0 left-0 h-full w-px origin-top bg-teal"
+                  style={{ transform: `scaleY(${0.1 + progress * 0.9})`, transition: "transform 300ms var(--ease)" }}
+                />
+              </div>
+              <div className="pl-7">
+                <div className="mb-8 space-y-1" role="tablist" aria-label="Workflow steps">
+                  {workflowSteps.map((s, i) => (
+                    <button
+                      key={s.num}
+                      role="tab"
+                      aria-selected={i === active}
+                      onClick={() => goTo(i)}
+                      className="flex w-full items-baseline gap-4 py-2 text-left"
+                    >
+                      <span className={`t-cap hov ${i === active ? "text-teal" : "text-ink3"}`}>{s.num}</span>
+                      <span className={`t-h3b hov ${i === active ? "text-deep" : "text-slate2 hover:text-slate"}`}>{s.title}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid">
+                  {workflowSteps.map((s, i) => (
+                    <div key={s.num} className="xf" data-s={st(i)} aria-hidden={i !== active}>
+                      <div className="t-bodyb text-ink">{s.heading}</div>
+                      <div className="t-body mt-1 max-w-[340px] text-ink2">{s.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-8">
+              <div className="frame relative aspect-[1.84/1]">
+                {workflowSteps.map((s, i) => (
+                  <img
+                    key={s.num}
+                    src={s.img}
+                    alt={s.alt}
+                    className="slide h-full w-full object-contain object-top"
+                    data-s={st(i)}
+                    aria-hidden={i !== active}
+                    draggable={false}
+                  />
+                ))}
+              </div>
+              <div className="t-cap mt-3 flex justify-between text-ink3">
+                <span>{workflowSteps[active].title}</span>
+                <span>{workflowSteps[active].num} / 04</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tablet / mobile: stacked */}
+      <div className="wrap mt-14 space-y-16 lg:hidden">
+        {workflowSteps.map((s) => (
+          <Reveal key={s.num}>
+            <div className="mb-4 flex items-baseline gap-4">
+              <span className="t-cap text-teal">{s.num}</span>
+              <span className="t-h3b text-deep">{s.title}</span>
+            </div>
+            <div className="t-bodyb mb-1 text-ink">{s.heading}</div>
+            <p className="t-body mb-5 max-w-[480px] text-ink2">{s.desc}</p>
+            <div className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+              <div className="frame min-w-[640px] sm:min-w-0">
+                <img src={s.img} alt={s.alt} className="block w-full" />
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <div className="h-24 lg:h-32" />
+    </section>
+  );
+}
+
+// ─── Engineering Architecture ─────────────────────────────────────────────────
+
+const archLayers: { label: string; band: string; items: { title: string; sub?: string }[] }[] = [
+  { label: "User Interface", band: "bg-[#123A4D]/[0.03]", items: [{ title: "Frontend", sub: "React · TypeScript · Next.js" }] },
+  {
+    label: "Application",
+    band: "bg-[#123A4D]/[0.07]",
+    items: [{ title: "Backend", sub: "Python · FastAPI · SQLAlchemy · NumPy" }],
+  },
+  {
+    label: "Engineering Intelligence",
+    band: "bg-[#123A4D]/[0.12]",
+    items: [{ title: "Model Parsing" }, { title: "Reservoir Domain Model" }, { title: "Engineering Services" }],
+  },
+  { label: "Persistence", band: "bg-[#123A4D]/[0.18]", items: [{ title: "Data Layer" }] },
+];
+
+function ArchLink({ d }: { d: number }) {
+  return (
+    <div className="flex justify-center py-1 lg:pl-[200px]" aria-hidden>
+      <div className="flex flex-col items-center">
+        <svg className="n" width="9" height="6" viewBox="0 0 9 6" style={delay(d)}>
+          <path d="M0 6 4.5 0 9 6" fill="none" stroke="#0E6B6E" strokeWidth="1.2" />
+        </svg>
+        <div className="dy h-4 w-px bg-teal" style={delay(d)} />
+        <svg className="n" width="9" height="6" viewBox="0 0 9 6" style={delay(d + 150)}>
+          <path d="M0 0 4.5 6 9 0" fill="none" stroke="#0E6B6E" strokeWidth="1.2" />
         </svg>
       </div>
     </div>
   );
 }
 
-// ── Hero ──────────────────────────────────────────────────────────────────────
-
-function Hero() {
+function Architecture() {
+  const { ref, inView } = useInView<HTMLDivElement>(0.2);
   return (
-    <section id="hero" data-section="hero" className="w-full bg-white">
-      <div className="flex gap-[24px] items-center justify-center pt-[72px] pb-[72px] px-[76px]">
-        {/* Left copy */}
-        <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px">
-          <div style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600, lineHeight: "normal", color: "#12344d" }}>
-            <p className="text-[60px] mb-0 leading-[1.1] tracking-[-0.44px]">Argos</p>
-            <p className="text-[40px] leading-[1.15] tracking-[-0.44px]" style={{ color: "#445566", fontStyle: "italic" }}>
-              Reservoir AI
-            </p>
-          </div>
-          <p
-            className="text-[20px] leading-[24px] tracking-[-0.3px]"
-            style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600, color: "#12344d" }}
-          >
-            AI-assisted engineering intelligence for reservoir simulation models
+    <section id="architecture" className="border-t border-formation bg-offwhite py-24 lg:py-32">
+      <div className="wrap">
+        <Reveal d={60}>
+          <h2 className="t-h2 mb-4 text-center text-deep">Engineering Architecture</h2>
+        </Reveal>
+        <Reveal d={120}>
+          <p className="t-body mx-auto mb-14 max-w-[460px] text-center text-ink2">
+            Argos is built as a modular engineering software platform.
           </p>
-          <button
-            onClick={() => jumpTo("demo-cases")}
-            className="flex items-center gap-[10px] px-[18px] py-[8px] rounded-[4px] cursor-pointer transition-opacity duration-150 hover:opacity-80 active:opacity-70"
-            style={{ background: "#12344d" }}
-          >
-            <span
-              className="text-white text-[13px] leading-[20px] tracking-[0.06px] whitespace-nowrap"
-              style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}
-            >
-              Learn more
-            </span>
-            <ArrowIcon />
-          </button>
-        </div>
+        </Reveal>
 
-        {/* Right: hero visualization */}
-        <div className="flex flex-col gap-[8px] items-start shrink-0 w-[552px]">
-          <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.1)] w-full overflow-hidden" style={{ height: 294 }}>
-            <a
-              href={screenshotUrl("assets-overview.png")}
-              target="_blank"
-              rel="noreferrer"
-              className="block w-full h-full"
-              aria-label="Open Reservoir AI assets overview screenshot"
-            >
-              <img
-                src={screenshotUrl("assets-overview.png")}
-                alt="Reservoir AI assets overview"
-                className="w-full h-full object-contain"
-                style={{ background: "#F8FAFB" }}
-              />
-            </a>
-          </div>
-          <p
-            className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
-            style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#445566" }}
-          >
-            Reservoir AI transforms reservoir simulation decks into structured engineering information.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-
-function StatCard({ stat }: { stat: Stat }) {
-  const valueColor =
-    stat.highlight === "error" ? "#a2131a" :
-    stat.highlight === "warn" ? "#b45309" :
-    stat.highlight === "ok" ? "#34702f" :
-    "black";
-
-  return (
-    <div
-      className="flex flex-[1_0_0] flex-col gap-[18px] items-start min-w-px overflow-clip p-[12px] rounded-[4px]"
-      style={{
-        background: "white",
-        border: "1px solid #e8ecef",
-      }}
-    >
-      <p
-        className="leading-[19px] text-[19px] w-full"
-        style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700, color: valueColor, height: 14 }}
-      >
-        {stat.value}
-      </p>
-      <p
-        className="leading-[20px] text-[13px] tracking-[0.06px] w-full"
-        style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#333" }}
-      >
-        {stat.label}
-      </p>
-    </div>
-  );
-}
-
-// ── Demo Case Block ───────────────────────────────────────────────────────────
-
-function CaseBlock({ c }: { c: typeof CASES[number] }) {
-  const Viz = VIZ[c.id];
-  return (
-    <div className="flex flex-col gap-[40px] items-start w-full">
-      {/* Divider + header row */}
-      <div className="flex flex-col gap-[24px] items-start px-[76px] w-full">
-        <div className="relative w-full" style={{ height: 0 }}>
-          <div className="absolute inset-[-2px_0_0_0]">
-            <svg width="100%" height="2" viewBox="0 0 1128 2" fill="none" preserveAspectRatio="none">
-              <line stroke="#C4C4C4" strokeWidth="2" x2="1128" y1="1" y2="1" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Title + image row */}
-        <div className="flex items-center justify-between w-full gap-[24px]">
-          {/* Left: case info */}
-          <div
-            className="flex flex-col gap-[24px] items-start shrink-0"
-            style={{ width: c.callout ? 648 : "auto", flex: c.callout ? "none" : "1 0 0" }}
-          >
-            <div className="flex flex-col gap-[8px] items-start">
-              <p
-                className="text-[10px] leading-[13.5px] tracking-[0.72px] uppercase w-[552px]"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#12344d" }}
-              >
-                {c.num}
-              </p>
-              <p
-                className="text-[30px] leading-[29px] tracking-[-0.44px] w-[552px]"
-                style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600, color: "#12344d" }}
-              >
-                {c.title}
-              </p>
-            </div>
-            <div
-              className="text-[16px] tracking-[-0.08px] w-[552px]"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#12344d" }}
-            >
-              {c.body.map((p, i) => (
-                <p key={i} className="leading-[20px] mb-0 whitespace-pre-wrap">{p}{i < c.body.length - 1 && <><br /><br /></>}</p>
-              ))}
-            </div>
-            {c.callout && (
-              <div className="flex items-center w-full">
-                <div className="bg-[#0e6b6e] h-[64px] shrink-0 w-[3px]" />
-                <div className="bg-[rgba(14,107,110,0.1)] flex flex-1 gap-[10px] items-start min-w-px overflow-clip p-[12px] rounded-[4px]">
-                  <div className="shrink-0 size-[20px]">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <g><path d={svgPaths.p6e93600} fill="#0E6B6E" /></g>
-                    </svg>
+        <div ref={ref} className={`dg mx-auto max-w-[960px] ${inView ? "in" : ""}`}>
+          {archLayers.map((layer, li) => {
+            const dark = layer.band === "bg-deep";
+            return (
+              <div key={layer.label}>
+                {li > 0 && <ArchLink d={li * 350 - 150} />}
+                <div
+                  className={`n grid items-center gap-4 rounded-[8px] border p-5 lg:grid-cols-[180px_1fr] lg:gap-5 ${layer.band} ${
+                    dark ? "border-deep" : "border-formation"
+                  }`}
+                  style={delay(li * 350)}
+                >
+                  <div className={`t-h4 ${dark ? "text-white" : "text-deep"}`}>{layer.label}</div>
+                  <div className={`grid gap-3 ${layer.items.length > 1 ? "sm:grid-cols-3" : ""}`}>
+                    {layer.items.map((it) => (
+                      <div
+                        key={it.title}
+                        className={`rounded-[8px] border px-4 py-3 ${
+                          dark ? "border-white/20 bg-white/5" : "border-deep bg-white"
+                        }`}
+                      >
+                        <div className={`t-smallb ${dark ? "text-white" : "text-deep"}`}>{it.title}</div>
+                        {it.sub && <div className="t-small mt-0.5 text-ink3">{it.sub}</div>}
+                      </div>
+                    ))}
                   </div>
-                  <p
-                    className="flex-1 text-[16px] leading-[20px] tracking-[-0.08px] text-[#111]"
-                    style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}
-                  >
-                    {c.callout}
-                  </p>
                 </div>
               </div>
-            )}
-          </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-          {/* Right: image/viz */}
-          <div className="flex flex-col gap-[8px] items-start shrink-0 w-[453px]">
-            <div
-              className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.1)] w-full overflow-hidden"
-              style={{ height: 294 }}
-            >
-              <a
-                href={screenshotUrl(c.overviewImg)}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full h-full"
-                aria-label={`Open ${c.title} overview screenshot`}
-              >
-                <img
-                  src={screenshotUrl(c.overviewImg)}
-                  alt={c.imgLabel}
-                  className="w-full h-full object-contain"
-                  style={{ background: "#F8FAFB" }}
-                />
+// ─── Future AI Layer ──────────────────────────────────────────────────────────
+
+const futureCaps = [
+  "Direct integration with reservoir simulation software",
+  "AI-assisted interpretation of validation, analysis, and diagnostic results",
+  "Support for optimization workflows, including objective definition, variable selection, and iterative case evaluation",
+  "Assistance in setting up uncertainty and sensitivity analysis",
+  "Identification of parameters and model assumptions that may warrant further investigation",
+  "Suggested changes to simulation deck inputs based on engineering findings",
+  "Comparison of simulation cases and development scenarios",
+  "Engineering question answering across reservoir models and analysis results",
+];
+
+function FutureHeader() {
+  return (
+    <>
+      <Reveal>
+        <h2 className="t-h2 mb-4 text-deep">Future AI Layer</h2>
+      </Reveal>
+      <Reveal d={80}>
+        <p className="t-body mb-4 max-w-[560px] text-ink2">
+          Argos is being designed to support AI-assisted engineering workflows built on top of the structured
+          reservoir model and its analysis results.
+        </p>
+        <p className="t-bodyb text-ink">Potential capabilities include:</p>
+      </Reveal>
+    </>
+  );
+}
+
+const futureGoal =
+  "The long-term goal is for Argos to move beyond model inspection and become an active engineering assistant that helps define, evaluate, and improve simulation workflows.";
+
+function Future() {
+  const n = futureCaps.length;
+  const { ref, progress } = useTrackProgress(n);
+  const vw = typeof window === "undefined" ? 1280 : window.innerWidth;
+  const pitch = Math.min(vw * 0.34, 460);
+  const cardW = pitch * 0.86;
+  const c = progress * (n - 1);
+
+  return (
+    <section id="future" className="bg-lightblue pt-24 lg:pt-[104px]">
+      <div className="wrap lg:hidden">
+        <FutureHeader />
+        <ol className="mt-8 space-y-3">
+          {futureCaps.map((t, i) => (
+            <li key={t} className="rounded-[8px] border border-formation bg-white p-6">
+              <div className="t-cap mb-2 text-teal">{String(i + 1).padStart(2, "0")}</div>
+              <p className="t-body text-ink">{t}</p>
+            </li>
+          ))}
+        </ol>
+        <p className="t-bodyb mt-8 text-deep">{futureGoal}</p>
+      </div>
+
+      <div ref={ref} className="relative hidden lg:block" style={{ height: `${n * 40}vh` }}>
+        <div className="sticky top-14 overflow-hidden bg-lightblue pt-6">
+          <div className="wrap">
+            <FutureHeader />
+          </div>
+          <ol className="relative mt-10 h-[240px]" aria-label="Potential capabilities">
+            {futureCaps.map((t, i) => {
+              const d = i - c;
+              const near = Math.max(0, 1 - Math.abs(d));
+              const scale = 0.92 + 0.16 * near;
+              return (
+                <li
+                  key={t}
+                  className="absolute top-0 flex h-full flex-col justify-between rounded-[8px] border border-formation bg-white p-7 will-change-transform"
+                  style={{
+                    width: cardW,
+                    left: "50%",
+                    marginLeft: -cardW / 2,
+                    transform: `translate3d(${d * pitch}px,0,0) scale(${scale})`,
+                    opacity: 0.55 + 0.45 * near,
+                  }}
+                >
+                  <span className="t-cap text-teal">{String(i + 1).padStart(2, "0")}</span>
+                  <p className="t-h3 text-ink">{t}</p>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="wrap">
+            <p className="t-bodyb mx-auto mt-10 max-w-[640px] text-center text-deep">{futureGoal}</p>
+          </div>
+        </div>
+      </div>
+      <div className="h-24 lg:h-32" />
+    </section>
+  );
+}
+
+// ─── About the Developer ──────────────────────────────────────────────────────
+
+function About() {
+  return (
+    <section id="about" className="bg-white py-24 lg:py-32">
+      <div className="wrap grid gap-10 lg:grid-cols-12 lg:gap-x-16">
+        <div className="lg:col-span-4">
+          <Reveal>
+            <h2 className="t-h2 text-deep">About the Developer</h2>
+          </Reveal>
+        </div>
+        <div className="lg:col-span-7 lg:col-start-6">
+          <Reveal d={80}>
+            <p className="t-h3 mb-10 max-w-[620px] text-ink">
+              Argos is being developed by Jose Guevara, a petroleum engineer and machine learning researcher who earned
+              his PhD in Petroleum Engineering from the University of Alberta in 2023. His work spans reservoir
+              simulation, optimization, scientific machine learning, and engineering software development, with current
+              research focused on the application of machine learning strategies to multiphase flow systems.
+            </p>
+            <div className="flex gap-8">
+              <a href="https://www.linkedin.com/in/jose-leonardo-guevara-27637633/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-deep transition-colors duration-200 hover:text-teal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z" />
+                </svg>
+              </a>
+              <a href="https://github.com/reservoir-ai/reservoir-intelligence-platform" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-deep transition-colors duration-200 hover:text-teal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.55v-2.1c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.82 1.19 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.66.8.55A11.5 11.5 0 0 0 12 .5z" />
+                </svg>
+              </a>
+              <a href="mailto:guevarau@ualberta.ca" aria-label="Contact" className="text-deep transition-colors duration-200 hover:text-teal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+                </svg>
               </a>
             </div>
-            <p
-              className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#445566" }}
-            >
-              {c.imgLabel}
-            </p>
-          </div>
-        </div>
-
-        {/* Detailed engineering screenshot */}
-        <div className="flex flex-col gap-[8px] items-start w-full mt-[28px]">
-          <a
-            href={screenshotUrl(c.detailImg)}
-            target="_blank"
-            rel="noreferrer"
-            className="block w-full"
-            aria-label={`Open ${c.title} detailed screenshot`}
-          >
-            <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] w-full overflow-hidden">
-              <img
-                src={screenshotUrl(c.detailImg)}
-                alt={c.detailLabel}
-                className="w-full h-auto block"
-              />
-            </div>
-          </a>
-
-          <p
-            className="text-[13px] leading-[20px] tracking-[0.06px] text-center w-full"
-            style={{
-              fontFamily: "'Inter:Regular', sans-serif",
-              fontWeight: 400,
-              color: "#445566",
-            }}
-          >
-            {c.detailLabel}
-          </p>
-        </div>
-      </div>
-
-      {/* Stats + analysis */}
-      <div className="flex flex-col gap-[40px] items-start px-[76px] w-full">
-        {/* Stat cards row */}
-        <div className="flex gap-[13px] items-center w-full">
-          {c.stats.map((s, i) => <StatCard key={i} stat={s} />)}
-        </div>
-
-        {/* Analysis panels */}
-        <div className="flex gap-[24px] items-start justify-center w-full">
-          {/* Validation findings or diagnostics column */}
-          {c.validationFindings ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px">
-              <p
-                className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700, color: "#12344d" }}
-              >
-                Validation Findings
-              </p>
-              <p
-                className="text-[16px] leading-[20px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700, color: "#a2131a" }}
-              >
-                4 findings · 2 errors · 2 warnings
-              </p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#12344d" }}>
-                {c.validationFindings.map((f, i) => (
-                  <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{f}</span></li>
-                ))}
-              </ul>
-            </div>
-          ) : c.sagd ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#12344d" }}>
-              <p className="text-[10px] leading-[13.5px] tracking-[0.72px] uppercase w-full">SAGD Analysis</p>
-              <div className="text-[16px] tracking-[-0.08px] w-full">
-                <p className="leading-[30px] mb-[20px]">3 valid well pairs identified</p>
-                <ul className="list-disc">
-                  {c.sagd.pairs.map((p, i) => (
-                    <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{p}</span></li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ) : c.diagnostics ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px" style={{ color: "#12344d" }}>
-              <p className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700 }}>Engineering Diagnostics</p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-                {c.diagnostics.map((d, i) => (
-                  <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{d}</span></li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {/* Middle column: analysis or additional review */}
-          {c.sagd ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400, color: "#12344d" }}>
-              <p className="text-[10px] leading-[13.5px] tracking-[0.72px] uppercase w-full">Additional Review</p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full">
-                {c.sagd.additional.map((a, i) => (
-                  <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{a}</span></li>
-                ))}
-              </ul>
-              <p className="text-[16px] leading-[20px] tracking-[-0.08px] w-full">{c.sagd.note}</p>
-            </div>
-          ) : c.analysis ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px" style={{ color: "#12344d" }}>
-              <p className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700 }}>Analysis</p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-                {c.analysis.map((a, i) => (
-                  <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{a}</span></li>
-                ))}
-              </ul>
-            </div>
-          ) : c.validationFindings && c.diagnostics ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px" style={{ color: "#12344d" }}>
-              <p className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700 }}>Engineering Diagnostics</p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-                {c.diagnostics.map((d, i) => (
-                  <li key={i} className="ms-[24px] mb-0"><span className="leading-[30px]">{d}</span></li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {/* Right column: validation or spacer */}
-          {c.validation && !c.validationFindings ? (
-            <div className="flex flex-[1_0_0] flex-col gap-[24px] items-start justify-center min-w-px">
-              <p className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700, color: "#12344d" }}>Validation</p>
-              <p className="text-[16px] leading-[20px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Bold', sans-serif", fontWeight: 700, color: c.validation.color }}>
-                {c.validation.text}
-              </p>
-            </div>
-          ) : (
-            <div className="flex-[1_0_0] min-w-px" style={{ height: 14 }} />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Demo Cases Section ────────────────────────────────────────────────────────
-
-function DemoCases() {
-  const [activeCase, setActiveCase] = useState("");
-  const caseRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActiveCase(e.target.getAttribute("data-case") || "");
-        });
-      },
-      { rootMargin: "-30% 0px -60% 0px" }
-    );
-    Object.values(caseRefs.current).forEach((el) => el && obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <section id="demo-cases" data-section="demo-cases" className="w-full bg-[#e8ecef] py-[72px] flex flex-col gap-[72px] items-start">
-      {/* Section intro */}
-      <div className="flex flex-col gap-[24px] items-start px-[76px]" style={{ color: "#12344d" }}>
-        <p
-          className="text-[40px] leading-[29px] tracking-[-0.44px] w-[552px]"
-          style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}
-        >
-          Demo Cases
-        </p>
-        <div className="text-[16px] tracking-[-0.08px] w-[552px]"
-          style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-          <p className="leading-[20px] mb-0">The following synthetic cases demonstrate different aspects of Reservoir AI. Each case is built from a reservoir simulation deck and processed through the same application workflow.</p>
-          <p className="leading-[20px] mb-0">&nbsp;</p>
-          <p className="leading-[20px]">Together, they demonstrate conventional model interpretation, grid-quality assessment, model validation, and domain-specific SAGD analysis.</p>
-        </div>
-      </div>
-
-      {/* Workspace overview */}
-      <div className="flex flex-col gap-[28px] px-[76px] w-full">
-        <div className="flex flex-col gap-[8px] items-start">
-          <p
-            className="text-[12px] leading-[13.5px] tracking-[0.72px] uppercase"
-            style={{
-              fontFamily: "'Inter:Bold', sans-serif",
-              fontWeight: 700,
-              color: "#0e6b6e",
-            }}
-          >
-            Workspace
-          </p>
-
-          <p
-            className="text-[28px] leading-[32px] tracking-[-0.3px]"
-            style={{
-              fontFamily: "'Inter:Semi Bold', sans-serif",
-              fontWeight: 600,
-              color: "#12344d",
-            }}
-          >
-            From assets to simulation cases
-          </p>
-
-          <p
-            className="text-[16px] leading-[22px] max-w-[760px]"
-            style={{
-              fontFamily: "'Inter:Regular', sans-serif",
-              fontWeight: 400,
-              color: "#445566",
-            }}
-          >
-            Reservoir AI organizes engineering work hierarchically across
-            assets, projects, and simulation cases. The workspace provides
-            access to multiple reservoir assets while individual projects
-            group related simulation and engineering-review cases.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-[24px] w-full">
-          <div className="flex flex-col gap-[8px]">
-            <a
-              href={screenshotUrl("assets-overview.png")}
-              target="_blank"
-              rel="noreferrer"
-              className="block"
-              aria-label="Open Assets overview screenshot"
-            >
-              <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] overflow-hidden">
-                <img
-                  src={screenshotUrl("assets-overview.png")}
-                  alt="Reservoir AI Assets workspace"
-                  className="w-full h-auto block"
-                />
-              </div>
-            </a>
-
-            <p
-              className="text-[13px] leading-[20px] text-center"
-              style={{ color: "#445566" }}
-            >
-              Assets workspace — multi-asset portfolio view
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-[8px]">
-            <a
-              href={screenshotUrl("project-overview.png")}
-              target="_blank"
-              rel="noreferrer"
-              className="block"
-              aria-label="Open Project overview screenshot"
-            >
-              <div className="bg-white border border-[#e8ecef] rounded-[4px] shadow-[0px_0px_12px_2px_rgba(0,0,0,0.08)] overflow-hidden">
-                <img
-                  src={screenshotUrl("project-overview.png")}
-                  alt="Reservoir AI Project workspace"
-                  className="w-full h-auto block"
-                />
-              </div>
-            </a>
-
-            <p
-              className="text-[13px] leading-[20px] text-center"
-              style={{ color: "#445566" }}
-            >
-              Project workspace — simulation cases within a development project
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky case tabs */}
-      <div className="sticky top-[78px] z-40 w-full px-[76px] py-[8px]" style={{ background: "#e8ecef" }}>
-        <div className="flex gap-[2px] bg-[rgba(18,52,77,0.06)] rounded-[6px] p-[3px] w-fit">
-          {CASES.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => {
-                const el = caseRefs.current[c.id];
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-              className="px-[14px] py-[7px] rounded-[4px] text-[13px] leading-[18px] tracking-[-0.08px] whitespace-nowrap transition-all duration-150 cursor-pointer"
-              style={{
-                fontFamily: "'Inter:Semi Bold', sans-serif",
-                fontWeight: 600,
-                background: activeCase === c.id ? "#12344d" : "transparent",
-                color: activeCase === c.id ? "white" : "#12344d",
-                opacity: activeCase === c.id ? 1 : 0.65,
-              }}
-            >
-              {c.num} {c.title}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Cases */}
-      {CASES.map((c) => (
-        <div
-          key={c.id}
-          data-case={c.id}
-          ref={(el) => { caseRefs.current[c.id] = el; }}
-          className="w-full"
-        >
-          <CaseBlock c={c} />
-        </div>
-      ))}
-    </section>
-  );
-}
-
-// ── Technology Section ────────────────────────────────────────────────────────
-
-function Technology({ activeFlow }: { activeFlow: number }) {
-  const techCols = [
-    {
-      label: "Backend",
-      subtitle: "Python · FastAPI · SQLAlchemy",
-      items: ["Simulation-deck parsing", "Reservoir domain models", "Grid-geometry reconstruction", "Model validation", "Engineering diagnostics", "Persistence and API services"],
-    },
-    {
-      label: "Engineering Processing",
-      subtitle: "NumPy · Engineering services",
-      items: ["Static-property analysis", "Layer characterisation", "Dykstra–Parsons heterogeneity", "Rock-fluid interpretation", "Well timeline reconstruction", "SAGD pair analysis"],
-    },
-    {
-      label: "Frontend",
-      subtitle: "React · TypeScript",
-      items: ["Assets and projects", "Simulation cases", "Structured model summaries", "Validation findings", "Engineering diagnostics", "Analysis results"],
-    },
-  ];
-
-  return (
-    <section id="technology" data-section="technology" className="w-full bg-white py-[72px]">
-      <div className="flex flex-col gap-[40px] items-start px-[76px] w-full">
-        {/* Title */}
-        <div className="flex flex-col items-center justify-center w-full">
-          <div className="flex flex-col gap-[24px] items-start" style={{ color: "#12344d" }}>
-            <p
-              className="text-[40px] leading-[29px] tracking-[-0.44px] text-center w-[552px]"
-              style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}
-            >
-              Technology
-            </p>
-            <p
-              className="text-[16px] leading-[20px] tracking-[-0.08px] w-[552px]"
-              style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}
-            >
-              Reservoir AI is implemented as a modular engineering software platform that separates simulation-model parsing, reservoir-engineering logic, persistence, APIs, and presentation.
-            </p>
-          </div>
-        </div>
-
-        {/* Three columns */}
-        <div className="flex gap-[24px] items-start justify-center w-full" style={{ color: "#12344d" }}>
-          {techCols.map((col, i) => (
-            <div key={i} className="flex flex-[1_0_0] flex-col gap-[24px] items-start min-w-px">
-              <p
-                className="text-[10px] leading-[13.5px] tracking-[0.72px] uppercase w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}
-              >
-                {col.label}
-              </p>
-              <p
-                className="text-[14px] leading-[18px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}
-              >
-                {col.subtitle}
-              </p>
-              <ul className="list-disc text-[16px] tracking-[-0.08px] w-full"
-                style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-                {col.items.map((item, j) => (
-                  <li key={j} className="ms-[24px] mb-0"><span className="leading-[30px]">{item}</span></li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Flow map */}
-        <div
-          className="flex gap-[16px] items-center overflow-clip px-[32px] py-[40px] rounded-[8px] w-full"
-          style={{ background: "#f8fafb", border: "1px solid #e8ecef" }}
-        >
-          {FLOW_STEPS.map((step, i) => (
-            <div key={i} className="flex items-center gap-[16px] shrink-0">
-              <span
-                className="text-[14px] leading-[18px] tracking-[-0.08px] whitespace-nowrap transition-all duration-300"
-                style={{
-                  fontFamily: "'Inter:Semi Bold', sans-serif",
-                  fontWeight: 600,
-                  color: activeFlow === i ? "#12344d" : "#aab4be",
-                  textDecorationLine: activeFlow === i ? "underline" : "none",
-                  textUnderlineOffset: "4px",
-                }}
-              >
-                {step}
-              </span>
-              {i < FLOW_STEPS.length - 1 && (
-                <svg width="13.3333" height="13.3333" viewBox="0 0 13.3333 13.3333" fill="none"
-                  style={{ opacity: activeFlow > i ? 1 : 0.35, transition: "opacity 0.3s" }}>
-                  <path d={svgPaths.p8dfa900} fill={activeFlow > i ? "#12344d" : "#6F8499"} />
-                </svg>
-              )}
-            </div>
-          ))}
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-// ── Future Work Section ───────────────────────────────────────────────────────
+// ─── Closing + Footer ─────────────────────────────────────────────────────────
 
-function FutureWork() {
+function Closing() {
   return (
-    <section id="future-work" data-section="future-work" className="w-full bg-[#e8ecef] px-[76px] py-[72px]">
-      <div className="flex flex-col items-start w-full">
-        <div className="flex flex-col gap-[24px] items-start" style={{ color: "#12344d" }}>
-          <p
-            className="text-[40px] leading-[29px] tracking-[-0.44px] w-[552px]"
-            style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}
-          >
-            Future Work
-          </p>
-          <div className="text-[16px] tracking-[-0.08px] w-[552px]"
-            style={{ fontFamily: "'Inter:Regular', sans-serif", fontWeight: 400 }}>
-            <p className="leading-[20px] mb-0">Future development will expand Reservoir AI with broader simulator support, simulation-results integration, richer engineering diagnostics, and automated case comparison.</p>
-            <p className="leading-[20px] mb-0">&nbsp;</p>
-            <p className="mb-0 leading-[20px]">
-              A key direction is the use of{" "}
-              <strong style={{ fontFamily: "'Inter:Semi Bold', sans-serif", fontWeight: 600 }}>
-                small language models (SLMs)
-              </strong>{" "}
-              for specialised reservoir-engineering tasks, enabling efficient natural-language interaction, model interpretation, and domain-specific assistance with lower computational requirements.
-            </p>
-            <p className="leading-[20px] mb-0">&nbsp;</p>
-            <p className="leading-[20px]">The long-term goal is to combine deterministic engineering analysis, simulation data, and specialised AI into a practical reservoir-engineering decision-support platform.</p>
-          </div>
-        </div>
+    <section className="bg-deep py-16">
+      <div className="wrap">
+        <Reveal>
+          <h2 className="t-h1 mb-3 text-white">Argos</h2>
+          <p className="t-h3 text-white/75">Engineering software for understanding reservoir simulation models.</p>
+        </Reveal>
       </div>
     </section>
   );
 }
-
-// ── Footer ────────────────────────────────────────────────────────────────────
 
 function Footer() {
   return (
-    <footer
-      id="footer"
-      data-section="footer"
-      className="w-full bg-[#12344d] flex flex-col justify-between overflow-clip pb-[24px] pt-[72px] px-[76px]"
-      style={{ height: 340 }}
-    >
-      <div className="flex items-start justify-between w-full">
-        {/* Brand */}
-        <div className="flex flex-col gap-[10px] items-start w-[440px]">
-          <div
-            style={{
-              fontFamily: "'Inter:Semi Bold', sans-serif",
-              fontWeight: 600,
-              lineHeight: "normal",
-            }}
-          >
-            <p className="text-[40px] mb-0 text-white tracking-[-0.44px]">
-              Argos
-            </p>
-            <p className="text-[30px] text-[#f8fafb] tracking-[-0.44px]">
-              Reservoir AI
-            </p>
-          </div>
-
-          <p
-            className="text-[14px] leading-[18px] tracking-[-0.08px] text-white w-full"
-            style={{
-              fontFamily: "'Inter:Semi Bold', sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            Transforming simulation models into engineering knowledge.
-          </p>
-
-          <p
-            className="text-[11px] leading-[16px] text-[#c4c4c4] w-full"
-            style={{
-              fontFamily: "'Inter:Regular', sans-serif",
-              fontWeight: 400,
-            }}
-          >
-            Reservoir AI is an independent engineering software project exploring
-            how structured software architecture, reservoir-engineering analysis,
-            and AI-assisted workflows can improve the interpretation and review
-            of reservoir simulation models.
-          </p>
+    <footer className="border-t border-white/10 bg-deep py-4">
+      <div className="wrap flex flex-wrap items-center justify-between gap-4">
+        <div className="t-small flex items-center gap-4 text-white/70">
+          <span className="t-h4 font-light text-white">Argos</span>
+          <span>© 2026</span>
         </div>
-
-        {/* Contact */}
-        <div className="flex flex-col gap-[12px] items-start w-[440px]">
-          <p
-            className="text-[12px] leading-[14px] tracking-[0.7px] uppercase text-[#7FA8BF] mb-0"
-            style={{
-              fontFamily: "'Inter:Semi Bold', sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            Contact
-          </p>
-
-          <p
-            className="text-[20px] leading-[24px] text-white mb-0"
-            style={{
-              fontFamily: "'Inter:Semi Bold', sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            Jose Leonardo Guevara
-          </p>
-
-          <div
-            className="flex flex-col gap-[7px] text-[12px] leading-[18px]"
-            style={{
-              fontFamily: "'Inter:Regular', sans-serif",
-              fontWeight: 400,
-            }}
-          >
-            <a
-              href="mailto:guevara@ualberta.ca"
-              className="text-[#c4c4c4] hover:text-white transition-colors"
-            >
-              guevara@ualberta.ca
-            </a>
-
-            <a
-              href="https://www.linkedin.com/in/jose-leonardo-guevara-27637633/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#c4c4c4] hover:text-white transition-colors"
-            >
-              LinkedIn
-            </a>
-
-            <a
-              href="https://scholar.google.com/citations?user=cXDaHhAAAAAJ&hl=es"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#c4c4c4] hover:text-white transition-colors"
-            >
-              Google Scholar
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Legal */}
-      <div
-        className="flex flex-col gap-[8px] items-start text-[11px] leading-[16px] text-[#6f8499]"
-        style={{
-          fontFamily: "'Inter:Regular', sans-serif",
-          fontWeight: 400,
-        }}
-      >
-        <p className="w-full">
-          All reservoir models, assets, project names, operating data, and
-          engineering values shown in this showcase are synthetic demonstration
-          data.
-        </p>
       </div>
     </footer>
   );
 }
 
-// ── App ───────────────────────────────────────────────────────────────────────
+function useSectionFade() {
+  useLayoutEffect(() => {
+    const secs = Array.from(document.querySelectorAll<HTMLElement>("main > section")).filter(
+      (el) => el.getBoundingClientRect().top > window.innerHeight * 0.6,
+    );
+    secs.forEach((el) => el.classList.add("sec"));
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("sec-in");
+            io.unobserve(e.target);
+          }
+        }),
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+    secs.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
 
 export default function App() {
-  const [activeSection, setActiveSection] = useState("hero");
-  const [activeFlow, setActiveFlow] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setActiveFlow((p) => (p + 1) % FLOW_STEPS.length), 1100);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const sections = document.querySelectorAll("[data-section]");
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActiveSection(e.target.getAttribute("data-section") || "");
-        });
-      },
-      { rootMargin: "-35% 0px -60% 0px" }
-    );
-    sections.forEach((s) => obs.observe(s));
-    return () => obs.disconnect();
-  }, []);
-
-  const activeNav = ["demo-cases", "technology", "future-work", "footer"].includes(activeSection)
-    ? activeSection : "";
-
+  useSectionFade();
   return (
-    <div className="flex flex-col items-start w-full" style={{ scrollBehavior: "smooth" }}>
-      <Header active={activeNav} />
-      <Hero />
-      <DemoCases />
-      <Technology activeFlow={activeFlow} />
-      <FutureWork />
+    <div className="min-h-full overflow-x-clip text-ink">
+      <Nav />
+      <main>
+        <Hero />
+        <Problem />
+        <Stages />
+        <Workflow />
+        <Architecture />
+        <Future />
+        <About />
+        <Closing />
+      </main>
       <Footer />
     </div>
   );

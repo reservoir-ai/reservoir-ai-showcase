@@ -1,3 +1,14 @@
 node_modules/
 dist/
 .DS_Store
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local development and backups
+backups/
+docs/
+.DS_Store

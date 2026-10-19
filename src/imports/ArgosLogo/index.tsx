@@ -1,4 +1,4 @@
-import svgPaths from "./svg-bzkwu2h0rp";
+import svgPaths from "./svg-fkycm4i2nn";
 
 function Icon() {
   return (
@@ -56,10 +56,18 @@ function Icon() {
   );
 }
 
-export default function Container() {
+function Container() {
   return (
-    <div className="content-stretch flex flex-col items-start relative size-full" data-name="Container">
+    <div className="absolute content-stretch flex flex-col items-start left-[-0.14px] top-[-0.14px]" data-name="Container">
       <Icon />
+    </div>
+  );
+}
+
+export default function ArgosLogo() {
+  return (
+    <div className="relative size-full" data-name="ArgosLogo">
+      <Container />
     </div>
   );
 }

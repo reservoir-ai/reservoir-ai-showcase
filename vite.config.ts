@@ -1,10 +1,9 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'node:path'
 
 export default defineConfig({
-  base: "/",
-
   plugins: [
     react(),
     tailwindcss(),
@@ -12,7 +11,11 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": import.meta.dirname + "/src",
+      '@': path.resolve(__dirname, './src'),
     },
   },
-});
+
+  server: {
+    host: '0.0.0.0',
+  },
+})
