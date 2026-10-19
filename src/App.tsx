@@ -247,7 +247,7 @@ function Typewriter({ text, start = 400, speed = 55 }: { text: string; start?: n
             </span>
             {wi < words.length - 1 && (
               <span className={`relative ${idx === n - 1 ? "tw-after" : ""}`}>
-                {(idx++, " ")}
+                {" "}{(() => { idx++; return null; })()}
               </span>
             )}
           </span>
